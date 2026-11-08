@@ -13,8 +13,5 @@
   "documentation": "https://github.com/carlosteiner/avatar-weather-card",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/carlosteiner/avatar-weather-card/issues",
-  "requirements": [
-    "Pillow"
-  ],
   "version": "0.1.0"
 }
