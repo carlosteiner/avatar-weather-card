@@ -1,0 +1,5 @@
+DOMAIN = "avatar_weather_card"
+PANEL_URL = "avatar-weather"
+STATIC_URL = "/avatar_weather_card_static"
+IMAGES_URL = "/avatar_weather_card_images"
+REFERENCE_URL = "/avatar_weather_card_reference"

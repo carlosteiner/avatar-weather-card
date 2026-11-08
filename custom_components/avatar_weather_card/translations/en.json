@@ -1,0 +1,6 @@
+{
+  "config": {
+    "step": {"user": {"title": "Avatar Weather Card", "description": "Adds the Avatar Weather admin panel to the sidebar."}},
+    "abort": {"already_configured": "Already set up."}
+  }
+}

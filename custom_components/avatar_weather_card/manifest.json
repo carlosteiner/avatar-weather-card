@@ -1,0 +1,20 @@
+{
+  "domain": "avatar_weather_card",
+  "name": "Avatar Weather Card",
+  "codeowners": [
+    "@carlosteiner"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "http",
+    "frontend",
+    "panel_custom"
+  ],
+  "documentation": "https://github.com/carlosteiner/avatar-weather-card",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/carlosteiner/avatar-weather-card/issues",
+  "requirements": [
+    "Pillow"
+  ],
+  "version": "0.1.0"
+}
