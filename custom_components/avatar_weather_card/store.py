@@ -15,6 +15,7 @@ STORAGE_VERSION = 1
 DATE_RE = re.compile(r"^(\d{4}-)?\d{2}-\d{2}( \d{2}:\d{2})?$")
 TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 NAME_RE = re.compile(r"^[a-z0-9_]{1,32}$")
+SERIES_ID_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,39}$")
 
 DEFAULTS = {
     "weather_sources": [],
@@ -38,12 +39,11 @@ DEFAULTS = {
     "holiday_calendar": "",
     "extra_holidays": [],
     "special_days": [
-        {"id": "anniversario", "start": "10-30", "end": "10-30"},
         {"id": "halloween", "start": "10-31", "end": "10-31"},
-        {"id": "natale", "start": "12-25", "end": "12-25"},
-        {"id": "capodanno", "start": "12-31", "end": "12-31"},
-        {"id": "befana", "start": "01-05", "end": "01-05"},
+        {"id": "christmas", "start": "12-25", "end": "12-25"},
+        {"id": "newyear", "start": "12-31", "end": "12-31"},
     ],
+    "series": {"active": [], "catalog_url": ""},   # installed picture series, in priority order; empty catalog_url = the default one
 }
 
 
@@ -189,6 +189,16 @@ def validate(cfg: dict) -> dict:
         seen.add(i)
         days.append({"id": i, "start": s, "end": e})
     out["special_days"] = days
+    se = cfg.get("series", {})
+    if not isinstance(se, dict):
+        raise ValueError("series must be an object")
+    act = se.get("active", [])
+    if not isinstance(act, list) or len(act) > 20 or not all(isinstance(i, str) and SERIES_ID_RE.match(i) for i in act):
+        raise ValueError("series.active must be a list of series ids")
+    url = se.get("catalog_url", "")
+    if url and not (isinstance(url, str) and re.match(r"^https://\S{4,280}$", url)):
+        raise ValueError("series.catalog_url must be an https address")
+    out["series"] = {"active": list(dict.fromkeys(act)), "catalog_url": url}
     return out
 
 

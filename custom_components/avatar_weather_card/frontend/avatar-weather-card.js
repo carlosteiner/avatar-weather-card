@@ -245,7 +245,7 @@ class AvatarWeatherCard extends HTMLElement {
 
   // The picture as a loaded <img>, handed to the canvas when it is ready.
   _show(name, slot, body) {
-    const src = `${IMAGES}/${encodeURIComponent(name)}.webp?v=${slot.v || 0}`;
+    const src = `${slot.u || `${IMAGES}/${encodeURIComponent(name)}.webp`}?v=${slot.v || 0}`;
     let im = this._imgs.get(src);
     const give = () => { if (this._bg && this._want === src) this._bg.setCharacter({ img: im, feetY: slot.feetY, body, lit: (slot.lum || 255) < EVENING_LUM }); };
     this._want = src;
@@ -343,7 +343,7 @@ class AvatarWeatherCard extends HTMLElement {
       ? `${esc(r.pick.name)} ${r.pick.exact ? "(exact)" : `(closest, distance ${r.pick.score.toFixed(1)})`} · wanted ${esc(r.want.temp)}${r.want.hum === "humid" ? " humid" : ""}, ${esc(r.want.sky)}, ${esc(r.want.moment)}${r.want.weekend ? ", weekend" : ""}${r.want.event ? ", " + esc(r.want.event) : ""}`
       : "";
     ov.className = cards ? "cards" : "";
-    ov.innerHTML = `${r.pick ? "" : `<div class="msg">No pictures yet. Add some in the Avatar Weather panel (sidebar).</div>`}${parts.join("")}${note ? `<div class="note">${note}</div>` : ""}`;
+    ov.innerHTML = `${r.pick ? "" : `<div class="msg">No pictures yet. Open Avatar Weather in the sidebar, Images tab, to install a picture series or add your own.</div>`}${parts.join("")}${note ? `<div class="note">${note}</div>` : ""}`;
   }
 
   // ---- the music view ----------------------------------------------------------
@@ -385,7 +385,7 @@ class AvatarWeatherCard extends HTMLElement {
     const rm = pickPicture(this._data, states, new Date(), { musicKey: this._salt + "|" + key });
     const av = sr.getElementById("npa"), img = sr.getElementById("npimg");
     if (rm.music && slots[rm.music.name]) {
-      const src = `${IMAGES}/${encodeURIComponent(rm.music.name)}.webp?v=${slots[rm.music.name].v || 0}`;
+      const src = `${slots[rm.music.name].u || `${IMAGES}/${encodeURIComponent(rm.music.name)}.webp`}?v=${slots[rm.music.name].v || 0}`;
       if (img.getAttribute("src") !== src) img.setAttribute("src", src);
       av.classList.add("has");
     } else av.classList.remove("has");
