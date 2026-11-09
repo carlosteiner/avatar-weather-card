@@ -10,10 +10,10 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from . import websocket_api as ws
-from .const import DOMAIN, IMAGES_URL, PANEL_URL, REFERENCE_URL, SERIES_URL, STATIC_URL
-from .images import ImageLibrary, ReferenceLibrary, SeriesLibrary
+from .const import DOMAIN, IMAGES_URL, PANEL_URL, REFERENCE_URL, STATIC_URL
+from .images import BackupLibrary, ImageLibrary, ReferenceLibrary, SeriesLibrary
 from .store import ConfigStore
-from .views import ReferenceUploadView, UploadView
+from .views import BackupDownloadView, ReferenceUploadView, UploadView
 
 _LOGGER = logging.getLogger(__name__)
 VERSION = "0.1.0"
@@ -31,14 +31,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         ref = ReferenceLibrary(Path(hass.config.path("avatar_weather_card")))
         await hass.async_add_executor_job(ref.setup)
         data["reference"] = ref
-        series = SeriesLibrary(Path(hass.config.path("avatar_weather_card")))
+        root = Path(hass.config.path("avatar_weather_card"))
+        backups = BackupLibrary(root, lib)
+        series = SeriesLibrary(root, lib, backups)
+        await hass.async_add_executor_job(backups.setup)
         await hass.async_add_executor_job(series.setup)
+        data["backups"] = backups
         data["series"] = series
         hass.http.register_view(UploadView(hass))
         hass.http.register_view(ReferenceUploadView(hass))
+        hass.http.register_view(BackupDownloadView(hass))
         await hass.http.async_register_static_paths(
-            [StaticPathConfig(IMAGES_URL, str(lib.dir), False), StaticPathConfig(REFERENCE_URL, str(ref.dir), False),
-             StaticPathConfig(SERIES_URL, str(series.dir), False)]
+            [StaticPathConfig(IMAGES_URL, str(lib.dir), False), StaticPathConfig(REFERENCE_URL, str(ref.dir), False)]
         )
     if not data.get("static"):
         await hass.http.async_register_static_paths(

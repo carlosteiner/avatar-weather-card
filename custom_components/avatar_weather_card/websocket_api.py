@@ -12,8 +12,8 @@ from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import DEFAULT_CATALOG_URL, DOMAIN, IMAGES_URL, SERIES_URL
-from .images import MAX_SERIES_BYTES, SERIES_ID, SeriesLibrary, merged_listing
+from .const import DEFAULT_CATALOG_URL, DOMAIN
+from .images import MAX_SERIES_BYTES, SERIES_ID, SeriesLibrary
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,13 +29,15 @@ def async_register(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_series_catalog)
     websocket_api.async_register_command(hass, ws_series_install)
     websocket_api.async_register_command(hass, ws_series_install_file)
-    websocket_api.async_register_command(hass, ws_series_remove)
+    websocket_api.async_register_command(hass, ws_backups_list)
+    websocket_api.async_register_command(hass, ws_backup_create)
+    websocket_api.async_register_command(hass, ws_backup_restore)
+    websocket_api.async_register_command(hass, ws_backup_delete)
 
 
 def _merged(hass: HomeAssistant) -> dict:
-    """The picture list the card and the panel see: the active series under the user's own pictures (blocking: run in the executor)."""
-    d = hass.data[DOMAIN]
-    return merged_listing(d["images"].listing(), d["series"], d["store"].config["series"]["active"], IMAGES_URL, SERIES_URL)
+    """The picture list the card and the panel see (blocking: run in the executor)."""
+    return hass.data[DOMAIN]["images"].listing()
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/config_get"})
@@ -143,13 +145,6 @@ def _clean_item(x) -> dict | None:
     return out
 
 
-async def _set_active(hass: HomeAssistant, sid: str, on: bool) -> None:
-    store = hass.data[DOMAIN]["store"]
-    cfg = store.config
-    active = [i for i in cfg["series"]["active"] if i != sid] + ([sid] if on else [])
-    await store.async_save({**cfg, "series": {**cfg["series"], "active": active}})
-
-
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/series_catalog"})
 @websocket_api.require_admin
 @websocket_api.async_response
@@ -164,19 +159,18 @@ async def ws_series_catalog(hass, connection, msg):
         items = [c for c in (_clean_item(x) for x in raw[:50]) if c]
     except (aiohttp.ClientError, ValueError, TimeoutError) as err:
         error = str(err) or err.__class__.__name__
-    installed = await hass.async_add_executor_job(d["series"].installed)
+    library = await hass.async_add_executor_job(d["series"].library_state)
     incoming = await hass.async_add_executor_job(d["series"].incoming_files)
     connection.send_result(msg["id"], {
-        "catalog": items, "error": error, "url": url, "installed": installed,
-        "active": d["store"].config["series"]["active"], "incoming": incoming,
+        "catalog": items, "error": error, "url": url, "library": library, "incoming": incoming,
     })
 
 
-@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/series_install", vol.Required("series_id"): str})
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/series_install", vol.Required("series_id"): str, vol.Required("backup"): bool})
 @websocket_api.require_admin
 @websocket_api.async_response
 async def ws_series_install(hass, connection, msg):
-    """Download a series from the catalog, check it and install it (or update it)."""
+    """Download a series from the catalog, check it, then REPLACE the picture library with it (`backup`: back the old pictures up first)."""
     d = hass.data[DOMAIN]
     sid = msg["series_id"]
     url = d["store"].config["series"]["catalog_url"] or DEFAULT_CATALOG_URL
@@ -189,8 +183,7 @@ async def ws_series_install(hass, connection, msg):
         if item["sha256"] and hashlib.sha256(blob).hexdigest() != item["sha256"]:
             raise ValueError("the downloaded file does not match the catalog (sha256)")
         events = [x["id"] for x in d["store"].config["special_days"]]
-        result = await hass.async_add_executor_job(d["series"].install, sid, blob, events)
-        await _set_active(hass, sid, True)
+        result = await hass.async_add_executor_job(d["series"].install, sid, blob, events, msg["backup"])
     except (aiohttp.ClientError, ValueError, TimeoutError) as err:
         _LOGGER.warning("Installing series %s failed: %s", sid, err)
         connection.send_error(msg["id"], "install_failed", str(err) or err.__class__.__name__)
@@ -198,11 +191,11 @@ async def ws_series_install(hass, connection, msg):
     connection.send_result(msg["id"], result)
 
 
-@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/series_install_file", vol.Required("file"): str})
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/series_install_file", vol.Required("file"): str, vol.Required("backup"): bool})
 @websocket_api.require_admin
 @websocket_api.async_response
 async def ws_series_install_file(hass, connection, msg):
-    """Install a series from a zip dropped by hand in /config/avatar_weather_card/incoming/."""
+    """Install a series (replacing the library) from a zip dropped by hand in /config/avatar_weather_card/incoming/."""
     d = hass.data[DOMAIN]
     name = msg["file"]
     series: SeriesLibrary = d["series"]
@@ -216,25 +209,52 @@ async def ws_series_install_file(hass, connection, msg):
             raise ValueError("file not found or too large")
         blob = path.read_bytes()
         sid = series.id_of(blob)
-        return series.install(sid, blob, [x["id"] for x in d["store"].config["special_days"]])
+        return series.install(sid, blob, [x["id"] for x in d["store"].config["special_days"]], msg["backup"])
 
     try:
         result = await hass.async_add_executor_job(work)
-        await _set_active(hass, result["id"], True)
     except ValueError as err:
         connection.send_error(msg["id"], "install_failed", str(err))
         return
     connection.send_result(msg["id"], result)
 
 
-@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/series_remove", vol.Required("series_id"): str})
+# --- backups of the picture library ------------------------------------------------------------------------------
+
+async def _backup_call(hass, connection, msg, fn, *args):
+    try:
+        result = await hass.async_add_executor_job(fn, *args)
+    except ValueError as err:
+        connection.send_error(msg["id"], "backup_failed", str(err))
+        return
+    connection.send_result(msg["id"], result)
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/backups_list"})
 @websocket_api.require_admin
 @websocket_api.async_response
-async def ws_series_remove(hass, connection, msg):
-    sid = msg["series_id"]
-    if not SERIES_ID.match(sid):
-        connection.send_error(msg["id"], "invalid_id", "invalid series id")
-        return
-    removed = await hass.async_add_executor_job(hass.data[DOMAIN]["series"].remove, sid)
-    await _set_active(hass, sid, False)
-    connection.send_result(msg["id"], {"removed": removed})
+async def ws_backups_list(hass, connection, msg):
+    d = hass.data[DOMAIN]
+    await _backup_call(hass, connection, msg, lambda: {"backups": d["backups"].listing(), "library": d["series"].library_state()})
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/backup_create", vol.Optional("name", default=""): str, vol.Optional("description", default=""): str})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_backup_create(hass, connection, msg):
+    await _backup_call(hass, connection, msg, hass.data[DOMAIN]["backups"].create, "manual backup", msg["name"], msg["description"])
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/backup_restore", vol.Required("backup_id"): str, vol.Required("backup_first"): bool})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_backup_restore(hass, connection, msg):
+    """Put a backup back as the picture library; the current pictures are deleted (`backup_first`: backed up before)."""
+    await _backup_call(hass, connection, msg, hass.data[DOMAIN]["backups"].restore, msg["backup_id"], msg["backup_first"])
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/backup_delete", vol.Required("backup_id"): str})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_backup_delete(hass, connection, msg):
+    await _backup_call(hass, connection, msg, hass.data[DOMAIN]["backups"].delete, msg["backup_id"])

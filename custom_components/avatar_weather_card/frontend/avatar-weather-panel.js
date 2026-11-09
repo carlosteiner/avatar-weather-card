@@ -29,7 +29,7 @@ class AvatarWeatherPanel extends HTMLElement {
   // Click any picture to see it big. Arrows (or the keys, or a swipe) step through the visible pictures; Esc, the cross or a click outside closes.
   _initLightbox() {
     const root = this.shadowRoot;
-    const IMG = 'img[src*="/avatar_weather_card_images/"], img[src*="/avatar_weather_card_series/"], img[src*="/avatar_weather_card_reference/"]';
+    const IMG = 'img[src*="/avatar_weather_card_images/"], img[src*="/avatar_weather_card_reference/"]';
     const nameOf = (src) => { const m = /\/([^\/?#]+)\.(?:webp|png)(?:[?#]|$)/.exec(src || ""); return m ? decodeURIComponent(m[1]) : ""; };
     const make = () => {
       const d = document.createElement("dialog");
@@ -123,7 +123,7 @@ class AvatarWeatherPanel extends HTMLElement {
         summary { cursor:pointer; padding:6px 0 } details label { display:inline-block; margin:4px 14px 4px 0 }
         .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px; margin-top:10px }
         .card { background:var(--card-background-color); border-radius:10px; padding:6px; text-align:center; font-size:11px; word-break:break-all }
-        img[src*="/avatar_weather_card_images/"], img[src*="/avatar_weather_card_series/"], img[src*="/avatar_weather_card_reference/"] { cursor:zoom-in }
+        img[src*="/avatar_weather_card_images/"], img[src*="/avatar_weather_card_reference/"] { cursor:zoom-in }
         dialog.lb { border:0; padding:0; background:transparent; max-width:100vw; max-height:100vh; color:var(--primary-text-color) }
         dialog.lb::backdrop { background:rgba(10,14,20,.78) }
         dialog.lb figure { margin:0; background:var(--card-background-color,#fff); border:1px solid var(--divider-color); border-radius:10px; padding:14px }
@@ -320,41 +320,97 @@ class AvatarWeatherPanel extends HTMLElement {
     };
   }
 
-  // The picture series: what the catalog offers, what is installed, zips dropped in the incoming folder.
+  // Asks, inline, a question with three answers: yes (back up first), no (go on without a backup), cancel.
+  _ask(msgEl, html, yesText, noText, cb) {
+    msgEl.className = "h";
+    msgEl.innerHTML = `<div style="padding:10px 14px;margin:8px 0;border-radius:10px;border:1px solid var(--warning-color,#e8a400)">${html}
+      <p style="margin:8px 0 0"><button data-c="yes">${yesText}</button> <button class="s" data-c="no">${noText}</button> <button class="s" data-c="cancel">Cancel</button></p></div>`;
+    msgEl.querySelectorAll("[data-c]").forEach((b) => (b.onclick = () => { msgEl.innerHTML = ""; if (b.dataset.c !== "cancel") cb(b.dataset.c === "yes"); }));
+  }
+
+  // The picture series: what the catalog offers and the zips dropped in the incoming folder. Installing one REPLACES the pictures.
   async _renderSeries(box) {
     const esc2 = (x) => String(x == null ? "" : x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     let d;
     try { d = await this._hass.callWS({ type: "avatar_weather_card/series_catalog" }); } catch (e) { box.innerHTML = `<h2>Picture series</h2><p class="err">${esc2(e.message || "Could not read the series")}</p>`; return; }
-    const inst = d.installed || {}, cat = d.catalog || [], ids = new Set(cat.map((x) => x.id));
+    const lib = d.library || { count: 0, series: null }, cat = d.catalog || [];
     const card = (x, extra) => `<div style="padding:10px 14px;margin:8px 0;border-radius:10px;background:var(--card-background-color)">${x}${extra || ""}</div>`;
     const mb = (b) => (b ? ` · ${(b / 1048576).toFixed(1)} MB` : "");
     const rows = cat.map((c) => {
-      const i = inst[c.id], upd = i && c.version && i.version !== c.version;
-      return card(`<b>${esc2(c.name || c.id)}</b> <small>${esc2(c.version)}</small>${i ? ` <span class="chip c-done">${upd ? "update available" : "installed"}</span>` : ""}
+      const cur = lib.series && lib.series.id === c.id, upd = cur && c.version && lib.series.version !== c.version;
+      return card(`<b>${esc2(c.name || c.id)}</b> <small>${esc2(c.version)}</small>${cur ? ` <span class="chip c-done">${upd ? "update available" : "in use"}</span>` : ""}
         <div class="h">${esc2(c.description)}</div><small>${c.count || "?"} pictures${mb(c.bytes)}${c.license ? " · " + esc2(c.license) : ""}${c.author ? " · " + esc2(c.author) : ""}</small>
         ${c.attribution ? `<div><small>${esc2(c.attribution)}</small></div>` : ""}`,
-        `<p style="margin:8px 0 0"><button data-si="${esc2(c.id)}" ${c.zip_url ? "" : "disabled"}>${i ? (upd ? "Update" : "Reinstall") : "Install"}</button>${i ? ` <button class="s" data-sr="${esc2(c.id)}">Remove</button>` : ""}</p>`);
+        `<p style="margin:8px 0 0"><button data-si="${esc2(c.id)}" data-name="${esc2(c.name || c.id)}" ${c.zip_url ? "" : "disabled"}>${cur ? (upd ? "Update" : "Reinstall") : "Install"}</button></p>`);
     });
-    const orphans = Object.keys(inst).filter((k) => !ids.has(k)).map((k) => card(`<b>${esc2(inst[k].name || k)}</b> <small>${esc2(inst[k].version)}</small> <span class="chip c-done">installed</span>
-        <div><small>${inst[k].count} pictures${inst[k].license ? " · " + esc2(inst[k].license) : ""}${inst[k].author ? " · " + esc2(inst[k].author) : ""}</small></div>`,
-        `<p style="margin:8px 0 0"><button class="s" data-sr="${esc2(k)}">Remove</button></p>`));
     const files = (d.incoming || []).map((f) => card(`<code>${esc2(f.file)}</code> <small>${(f.bytes / 1048576).toFixed(1)} MB</small>`, `<p style="margin:8px 0 0"><button class="s" data-sf="${esc2(f.file)}">Install this zip</button></p>`));
     box.innerHTML = `<h2>Picture series</h2>
-      <p class="h">A series is a ready-made set of pictures that fills the grids below. <b>Your own pictures always win</b> over the pictures of a series, and removing a series never touches yours.</p>
+      <p class="h">A series is a ready-made set of pictures. <b>Installing a series replaces all your pictures</b> with the ones of the series (the ones you have now are deleted); you are asked first whether to keep a backup, which you can restore later from <i>Backups</i> below.
+        ${lib.count ? `Right now you have <b>${lib.count}</b> pictures${lib.series ? `, from the series “${esc2(lib.series.name || lib.series.id)}”` : ""}.` : "You have no pictures yet."}</p>
       ${d.error ? `<p class="err">Could not load the list of series (${esc2(d.error)}). You can still add your own pictures, or install a zip: copy it into <code>/config/avatar_weather_card/incoming/</code> and reopen this tab.</p>` : ""}
-      ${rows.join("")}${orphans.join("")}
+      ${rows.join("")}
       ${files.length ? `<h3 style="margin:14px 0 2px">Zip files in the incoming folder</h3>${files.join("")}` : ""}
-      ${!cat.length && !d.error && !orphans.length ? `<p class="h">The catalog has no series yet.</p>` : ""}
+      ${!cat.length && !d.error ? `<p class="h">The catalog has no series yet.</p>` : ""}
       <div id="smsg" class="h"></div>`;
-    const msg = (t, bad) => { const m = box.querySelector("#smsg"); m.className = bad ? "err" : "h"; m.textContent = t; };
-    const run = async (btn, text, call) => {
+    const msgEl = box.querySelector("#smsg");
+    const msg = (t, bad) => { msgEl.className = bad ? "err" : "h"; msgEl.textContent = t; };
+    const run = async (text, call) => {
       box.querySelectorAll("button").forEach((b) => (b.disabled = true)); msg(text);
-      try { const r = await call(); msg(r && r.count != null ? `Installed “${r.name || r.id}”: ${r.count} pictures${r.skipped ? ` (${r.skipped} files skipped)` : ""} ✓` : "Done ✓"); setTimeout(() => this._renderImages(), 900); }
+      try { const r = await call(); msg(`Installed “${r.name || r.id}”: ${r.count} pictures${r.skipped ? ` (${r.skipped} files skipped)` : ""}${r.backup ? ", your previous pictures are saved in a backup" : ""} ✓`); setTimeout(() => this._renderImages(), 1500); }
       catch (e) { msg(e.message || "Failed", true); box.querySelectorAll("button").forEach((b) => (b.disabled = false)); }
     };
-    box.querySelectorAll("[data-si]").forEach((b) => (b.onclick = () => run(b, "Downloading and installing… (can take a minute)", () => this._hass.callWS({ type: "avatar_weather_card/series_install", series_id: b.dataset.si }))));
-    box.querySelectorAll("[data-sf]").forEach((b) => (b.onclick = () => run(b, "Installing…", () => this._hass.callWS({ type: "avatar_weather_card/series_install_file", file: b.dataset.sf }))));
-    box.querySelectorAll("[data-sr]").forEach((b) => (b.onclick = () => { if (confirm(`Remove the series “${b.dataset.sr}”? Your own pictures are not touched.`)) run(b, "Removing…", () => this._hass.callWS({ type: "avatar_weather_card/series_remove", series_id: b.dataset.sr })); }));
+    // never delete without asking: with pictures in place, ask about the backup; with none, there is nothing to lose
+    const go = (label, call, text) => {
+      if (!lib.count) return run(text, () => call(false));
+      this._ask(msgEl, `Installing <b>${esc2(label)}</b> will <b>delete the ${lib.count} pictures you have now</b> and replace them with the series. Do you want to make a backup of them first?`,
+        "Back up, then install", "Install without a backup", (backup) => run(backup ? "Backing up and installing… (can take a minute)" : text, () => call(backup)));
+    };
+    box.querySelectorAll("[data-si]").forEach((b) => (b.onclick = () => go(`“${b.dataset.name}”`, (backup) => this._hass.callWS({ type: "avatar_weather_card/series_install", series_id: b.dataset.si, backup }), "Downloading and installing… (can take a minute)")));
+    box.querySelectorAll("[data-sf]").forEach((b) => (b.onclick = () => go(`the zip ${b.dataset.sf}`, (backup) => this._hass.callWS({ type: "avatar_weather_card/series_install_file", file: b.dataset.sf, backup }), "Installing…")));
+  }
+
+  // Backups of the pictures: make one now, restore one, delete one.
+  async _renderBackups(box) {
+    const esc2 = (x) => String(x == null ? "" : x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    let list, now;
+    try { const r = await this._hass.callWS({ type: "avatar_weather_card/backups_list" }); list = r.backups; now = r.library.count; } catch (e) { box.innerHTML = `<h2>Backups</h2><p class="err">${esc2(e.message || "Could not read the backups")}</p>`; return; }
+    const rows = list.map((b) => `<div style="padding:10px 14px;margin:8px 0;border-radius:10px;background:var(--card-background-color)">
+        <b>${esc2(b.name || b.reason || "Backup")}</b> ${b.damaged ? `<span class="err">damaged</span>` : `<small>${esc2(new Date(b.created * 1000).toLocaleString())} · ${b.count} pictures · ${(b.bytes / 1048576).toFixed(1)} MB${b.series ? " · series " + esc2(b.series) : ""}</small>`}
+        ${b.description ? `<div class="h">${esc2(b.description)}</div>` : ""}${b.name && b.reason && b.reason !== "manual backup" ? `<div><small>${esc2(b.reason)}</small></div>` : ""}
+        <p style="margin:8px 0 0">${b.damaged ? "" : `<button data-br="${esc2(b.id)}" data-n="${b.count}">Restore</button> `}<button class="s" data-bdl="${esc2(b.id)}">Download</button> <button class="s" data-bd="${esc2(b.id)}">Delete</button></p></div>`);
+    box.innerHTML = `<h2>Backups</h2>
+      <p class="h">A backup is a copy of all your pictures. Restoring one <b>replaces the pictures you have now</b>. Up to 20 backups are kept; delete the ones you no longer need.</p>
+      <p><button id="bnew" ${now ? "" : "disabled"}>Back up my pictures now</button></p>
+      <div id="bform" hidden style="padding:10px 14px;margin:8px 0;border-radius:10px;background:var(--card-background-color)">
+        <p style="margin:0 0 6px"><label>Name <input id="bname" maxlength="60" style="width:min(360px,100%)" placeholder="e.g. Before trying the new series"></label></p>
+        <p style="margin:0 0 6px"><label>Description (optional)<br><textarea id="bdesc" maxlength="300" rows="2" style="width:min(480px,100%)"></textarea></label></p>
+        <p style="margin:0"><button id="bcreate">Create backup</button> <button class="s" id="bcancel">Cancel</button></p></div>
+      ${rows.join("") || `<p class="h">No backups yet.</p>`}
+      <div id="bmsg" class="h"></div>`;
+    const msgEl = box.querySelector("#bmsg");
+    const msg = (t, bad) => { msgEl.className = bad ? "err" : "h"; msgEl.textContent = t; };
+    const call = async (text, fn, after) => {
+      box.querySelectorAll("button").forEach((b) => (b.disabled = true)); msg(text);
+      try { await fn(); after(); } catch (e) { msg(e.message || "Failed", true); box.querySelectorAll("button").forEach((b) => (b.disabled = false)); }
+    };
+    const form = box.querySelector("#bform");
+    box.querySelector("#bnew").onclick = () => { form.hidden = false; box.querySelector("#bname").value = `Backup ${new Date().toLocaleDateString()}`; box.querySelector("#bname").focus(); box.querySelector("#bname").select(); };
+    box.querySelector("#bcancel").onclick = () => { form.hidden = true; };
+    box.querySelector("#bcreate").onclick = () => call("Backing up…", () => this._hass.callWS({ type: "avatar_weather_card/backup_create", name: box.querySelector("#bname").value, description: box.querySelector("#bdesc").value }), () => this._renderBackups(box));
+    // the zip is not served as a plain file: fetch it with the user's login and save it
+    box.querySelectorAll("[data-bdl]").forEach((b) => (b.onclick = () => call("Preparing the download…", async () => {
+      const r = await this._hass.fetchWithAuth(`/api/avatar_weather_card/backup/${encodeURIComponent(b.dataset.bdl)}`);
+      if (!r.ok) throw new Error(`Download failed (HTTP ${r.status})`);
+      const blob = await r.blob(), a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = `avatar-weather-backup-${b.dataset.bdl}.zip`; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 20000);
+    }, () => { msg("Downloaded ✓"); box.querySelectorAll("button").forEach((x) => (x.disabled = false)); })));
+    box.querySelectorAll("[data-bd]").forEach((b) => (b.onclick = () => { if (confirm("Delete this backup? This cannot be undone.")) call("Deleting…", () => this._hass.callWS({ type: "avatar_weather_card/backup_delete", backup_id: b.dataset.bd }), () => this._renderBackups(box)); }));
+    box.querySelectorAll("[data-br]").forEach((b) => (b.onclick = () => {
+      const restore = (backup_first) => call(backup_first ? "Backing up and restoring…" : "Restoring…", () => this._hass.callWS({ type: "avatar_weather_card/backup_restore", backup_id: b.dataset.br, backup_first }), () => this._renderImages());
+      if (!now) return restore(false);
+      this._ask(msgEl, `Restoring this backup (${b.dataset.n} pictures) will <b>delete the ${now} pictures you have now</b>. Do you want to make a backup of them first?`, "Back up, then restore", "Restore without a backup", restore);
+    }));
   }
 
   async _renderImages() {
@@ -408,6 +464,10 @@ class AvatarWeatherPanel extends HTMLElement {
     const secOf = (p) => (p.event ? "events" : p.music ? "music" : (p.moment === "any" || p.moment === "day") ? "day" : (FOLD[p.moment] || p.moment));
     const bySec = {}; parsedAll.forEach((p) => (bySec[secOf(p)] = bySec[secOf(p)] || []).push(p));
     const baseSet = new Set(all.map((n) => n.replace(/_\d+$/, "")));
+    // pictures that really are humid (the selector may use a normal picture for a humid wish, but the grid must not count that as done)
+    const hkey = (t, k, m, wk) => `${t}|${k}|${FOLD[m] || m}|${wk ? 1 : 0}`;
+    const humidHave = new Set(parsedAll.filter((p) => p.hum === "humid" && !p.music && !p.event).map((p) => hkey(p.temp, p.sky, p.moment, p.weekend)));
+    const humidCell = (t, k) => HUMTEMP[t] && DRYSKY[k];
     const src = (n) => `${(slots[n] || {}).u || `/avatar_weather_card_images/${esc(n)}.webp`}?v=${(slots[n] || {}).v || 0}`;
     const nameOf = (temp, hum, sky, mom, wk) => `${temp}${hum !== "any" ? "_" + hum : ""}_${sky}_${mom}${wk ? "_weekend" : ""}`;
     const exact = (nm) => all.filter((k) => k.replace(/_\d+$/, "") === nm);
@@ -429,8 +489,9 @@ class AvatarWeatherPanel extends HTMLElement {
       const q = quality(c, nm, wk);
       return { q, name: c.name, info: `${nm} → ${c.name} (${WORDS[q]})` };
     };
-    const td = (nm, wk, music, extra = "") => {
+    const td = (nm, wk, music, hk = "") => {
       const c = cellFor(nm, wk, music);
+      if (hk && !humidHave.has(hk) && c.q < 2) { c.q = 2; c.info = `${nm} → no humid picture yet${c.name ? `, shows ${c.name}` : ""} (fallback)`; }
       return `<td class="q${c.q}"><button type="button" class="cell" data-n="${esc(nm)}" data-pic="${esc(c.name || "")}" data-q="${c.q}" data-info="${esc(c.info)}" aria-label="${esc(c.info)}"></button></td>`;
     };
     const gridFor = (s) => {
@@ -441,14 +502,14 @@ class AvatarWeatherPanel extends HTMLElement {
       if (s.kind === "music") {
         return `<table class="covt"><thead><tr><th></th>${MOM.map((m) => `<th>${MOMLAB[m]}</th>`).join("")}</tr></thead><tbody>${TEMPS.map((t) => `<tr><th>${t}</th>${MOM.map((m) => td(`music_${t}_${m}${wk ? "_weekend" : ""}`, wk, true)).join("")}</tr>`).join("")}</tbody></table>`;
       }
-      return `<table class="covt"><thead><tr><th></th>${SKIES.map((k) => `<th>${k}</th>`).join("")}</tr></thead><tbody>${TEMPS.map((t) => `<tr><th>${t}</th>${SKIES.map((k) => (!cellOn(t, k, s.m) || (st.hum !== "any" && (!DRYSKY[k] || !HUMTEMP[t]))) ? NA : td(nameOf(t, st.hum, k, s.m, wk), wk, false)).join("")}</tr>`).join("")}</tbody></table>`;
+      return `<table class="covt"><thead><tr><th></th>${SKIES.map((k) => `<th>${k}</th>`).join("")}</tr></thead><tbody>${TEMPS.map((t) => `<tr><th>${t}</th>${SKIES.map((k) => (!cellOn(t, k, s.m) || (st.hum !== "any" && !humidCell(t, k))) ? NA : td(nameOf(t, st.hum, k, s.m, wk), wk, false, st.hum === "humid" ? hkey(t, k, s.m, wk) : "")).join("")}</tr>`).join("")}</tbody></table>`;
     };
-    const doneOf = (s) => {   // cells (weekday + weekend, no humidity tag) that have a picture of their own
+    const doneOf = (s) => {   // cells (weekday + weekend, plus the humid variants of the warm ones) that have a picture of their own
       if (s.kind === "events") return [events.length * MOM.length, events.reduce((a, e) => a + MOM.filter((m) => baseSet.has(`${e}_${m}`)).length, 0)];
       if (s.kind === "music") { let n = 0, d = 0; for (const t of TEMPS) for (const m of MOM) for (const wk of [false, true]) { n++; if (baseSet.has(`music_${t}_${m}${wk ? "_weekend" : ""}`)) d++; } return [n, d]; }
       if (s.key === "day") return [0, 0];   // the generic family is optional: not counted
       let n = 0, d = 0;
-      for (const t of TEMPS) for (const k of SKIES) for (const wk of [false, true]) { if (!cellOn(t, k, s.m)) continue; n++; if (baseSet.has(nameOf(t, "any", k, s.m, wk))) d++; }
+      for (const t of TEMPS) for (const k of SKIES) for (const wk of [false, true]) { if (!cellOn(t, k, s.m)) continue; n++; if (baseSet.has(nameOf(t, "any", k, s.m, wk))) d++; if (humidCell(t, k)) { n++; if (humidHave.has(hkey(t, k, s.m, wk))) d++; } }
       return [n, d];
     };
     const TEMPLAB = { freezing: "freezing", cold: "cold", chilly: "chilly", mild: "mild", warm: "warm", hot: "hot", heatwave: "heatwave" };
@@ -456,7 +517,7 @@ class AvatarWeatherPanel extends HTMLElement {
       const what = p.music ? `music · ${p.temp} · ${p.moment}` : p.event ? `${p.event} · ${p.moment}` : `${TEMPLAB[p.temp] || p.temp}${p.hum !== "any" ? " " + p.hum : ""} · ${p.sky} · ${p.moment}`;
       return `<li class="slot"><div class="thumb"><img class="shot" loading="lazy" src="${src(p.name)}" alt=""></div>
         <div class="meta"><code class="sid">${esc(p.name)}</code><p class="cond">${esc(what)}${p.weekend ? " · weekend" : ""}</p></div>
-        <span class="chip c-done">${(slots[p.name] || {}).series ? "Series" : "Done"}</span><button class="s" data-pick="${esc(p.base)}" data-sec="${s.key}">Open</button>${(slots[p.name] || {}).series ? "" : `<button class="s" data-del="${esc(p.name)}">Delete</button>`}</li>`;
+        <span class="chip c-done">Done</span><button class="s" data-pick="${esc(p.base)}" data-sec="${s.key}">Open</button><button class="s" data-del="${esc(p.name)}">Delete</button></li>`;
     }).join("");
     const secHtml = (s) => {
       const [tot, done] = doneOf(s), open = !!st.open[s.key], wk = st.mode[s.key] === "w";
@@ -475,7 +536,7 @@ class AvatarWeatherPanel extends HTMLElement {
     const totalCells = SECTIONS.reduce((a, s) => a + doneOf(s)[0], 0), totalDone = SECTIONS.reduce((a, s) => a + doneOf(s)[1], 0);
     body.innerHTML = `
       <h2>Images <small>${all.length}</small></h2>
-      <p class="h"><b>${totalDone}</b> of ${totalCells} cells have a picture of their own (weekdays and weekend, no humidity tag); the other cells use the closest picture.
+      <p class="h"><b>${totalDone}</b> of ${totalCells} cells have a picture of their own (weekdays, weekend and the humid variants of warm and hot weather); the other cells use the closest picture.
         <b>Drop or paste (Ctrl+V) pictures</b> on a cell or anywhere on this page: they are named automatically after the selected cell (a second picture for the same cell becomes an alternative, <code>_2</code>, <code>_3</code>…).
         A file already named like a slot (<code>mild_rain_afternoon.png</code>) keeps its name and replaces that picture.</p>
       <p><label>Write the prompts for <select id="v-mode"><option value="text" ${st.pm.textOnly ? "selected" : ""}>a text-only engine (no picture attached)</option><option value="ref" ${st.pm.textOnly ? "" : "selected"}>an engine that takes a reference picture</option></select></label></p>
@@ -483,14 +544,16 @@ class AvatarWeatherPanel extends HTMLElement {
       <p><label>Humidity (weather grids) <select id="v-hum">${[["any", "Normal"], ["humid", "Humid"]].map(([v, l]) => `<option value="${v}" ${st.hum === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
         <small>humid pictures exist only for warm, hot and heatwave, under clear, cloudy or wind</small></p>
       <div id="series"><h2>Picture series</h2><p class="h">Loading…</p></div>
+      <div id="backups"><h2>Backups</h2><p class="h">Loading…</p></div>
       <div class="drop" id="idrop">Drop pictures here or <input type="file" id="ifile" multiple accept="image/png,image/webp"></div>
       <div class="log" id="ilog"></div>
       ${SECTIONS.map(secHtml).join("")}`;
     this._renderSeries(r.getElementById("series"));
+    this._renderBackups(r.getElementById("backups"));
     const log = r.getElementById("ilog"), say = (t, bad) => { const d = document.createElement("div"); d.textContent = t; if (bad) d.className = "err"; log.appendChild(d); };
 
     // ---- upload: the name comes from the cell (dropped on it, or the selected one) unless the file is already named like a slot
-    const taken = new Set(all.filter((k) => !(slots[k] || {}).series));   // only the user's own pictures: a picture dropped on a cell that has a series picture overrides it
+    const taken = new Set(all);
     const freeName = (nm) => { if (!taken.has(nm)) return nm; let k = 2; while (taken.has(`${nm}_${k}`)) k++; return `${nm}_${k}`; };
     const send = async (files, cellName, secKey) => {
       files = files.filter((f) => /^image\/(png|webp)$/.test(f.type));
@@ -549,7 +612,7 @@ class AvatarWeatherPanel extends HTMLElement {
       if (cellBtn) cellBtn.classList.add("sel");
       const ex = exact(nm), c = ex.length ? null : cellFor(nm, /_weekend$/.test(nm), s.kind === "music");
       const pics = ex.length
-        ? `<div style="display:flex;gap:12px;flex-wrap:wrap">${ex.map((n) => `<div class="card" style="width:150px"><img style="height:210px" src="${src(n)}"><div>${esc(n)}</div>${(slots[n] || {}).series ? `<small>from the series “${esc(slots[n].series)}”: drop your own picture here to replace it</small>` : `<button class="s" data-del="${esc(n)}">Delete</button>`}</div>`).join("")}</div>`
+        ? `<div style="display:flex;gap:12px;flex-wrap:wrap">${ex.map((n) => `<div class="card" style="width:150px"><img style="height:210px" src="${src(n)}"><div>${esc(n)}</div><button class="s" data-del="${esc(n)}">Delete</button></div>`).join("")}</div>`
         : `<p class="h"><span class="err">No picture of its own yet.</span> ${c && c.name ? `Today this cell shows <code>${esc(c.name)}</code> (${WORDS[c.q]}).` : "There is no other picture to fall back on."}</p>${c && c.name ? `<img style="height:150px;opacity:.6" src="${src(c.name)}">` : ""}`;
       let prompt = "";
       if (s.kind === "events") prompt = `<p class="h">Special days have no ready-made prompt: write it yourself (the prompts of the weather cells can inspire you) and drop the picture on this cell.</p>`;

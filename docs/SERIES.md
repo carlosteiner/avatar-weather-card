@@ -1,6 +1,6 @@
 # Picture series
 
-A **series** is a ready-made set of pictures of one character. Installing a series fills the coverage grids; the user's own pictures always win over a series picture of the same name, and removing a series never touches the user's pictures.
+A **series** is a ready-made set of pictures of one character. **Installing a series replaces the whole picture library**: the pictures the user has now are deleted and the series' ones take their place. Before that the panel asks whether to make a backup (see *Backups*).
 
 ## A series zip
 A flat zip with:
@@ -15,7 +15,10 @@ Build one with `python3 tools/make_series.py --src <folder with .webp + manifest
 `index.json` in the images repository: `{"series": [{"id", "name", "version", "description", "author", "license", "attribution", "count", "bytes", "sha256", "zip_url"}]}`. `zip_url` must be https; the integration checks the sha256 when it is given. The address of the catalog can be changed in the stored settings (`series.catalog_url`).
 
 ## Installing
-- From the catalog: *Images* tab → *Picture series* → Install / Update / Remove.
+- From the catalog: *Images* tab → *Picture series* → Install / Update / Reinstall.
 - By hand: copy a zip into `/config/avatar_weather_card/incoming/` and install it from the same tab.
 
-Installed series live in `/config/avatar_weather_card/series/<id>/` and are served under `/avatar_weather_card_series/<id>/`.
+If the user already has pictures, the panel warns that they will be deleted and asks: **back up first** / install without a backup / cancel. A zip is fully validated before anything is touched: a bad series changes nothing and leaves no backup behind. Pictures added afterwards (by upload) simply live next to the series' ones.
+
+## Backups
+`/config/avatar_weather_card/backups/<YYYYMMDD-HHMMSS>.zip`: the pictures, their `manifest.json` and a `backup.json` (date, reason, count, series). In the *Images* tab → *Backups*: **Back up my pictures now** (you give it a name and an optional description), **Download** (saves the zip on your computer; it is only served to administrators), **Restore** (replaces the current pictures; it asks the same backup question first) and **Delete**. Up to 20 backups are kept; delete old ones to make room.

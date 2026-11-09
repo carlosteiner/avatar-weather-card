@@ -121,8 +121,8 @@ export function createSelector(opts = {}) {
     return dist + humCost(want, have);
   }
   function humCost(want, have) {
-    if (have.hum === "any" || want.hum === "any" || want.hum === have.hum) return 0;
-    return HUM_NORMAL;   // want normal, picture humid (a humid wish never meets a non-humid tag)
+    if (have.hum === "any" || want.hum === have.hum) return 0;
+    return HUM_NORMAL;   // want normal (or no humidity at all, as in a plain cell name), picture humid: a humid picture must not take the place of a normal one
   }
 
   const DRY = { clear: 1, cloudy: 1, wind: 1, fog: 1 };

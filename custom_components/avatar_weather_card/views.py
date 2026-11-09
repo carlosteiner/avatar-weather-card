@@ -66,3 +66,25 @@ class ReferenceUploadView(HomeAssistantView):
         except ValueError as err:
             return self.json_message(str(err), 400)
         return self.json(info)
+
+
+class BackupDownloadView(HomeAssistantView):
+    """Download one backup zip (admin only; the backups folder is never served as static files)."""
+    url = "/api/avatar_weather_card/backup/{bid}"
+    name = "api:avatar_weather_card:backup"
+    requires_auth = True
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        self.hass = hass
+
+    async def get(self, request: web.Request, bid: str) -> web.StreamResponse:
+        if not request["hass_user"].is_admin:
+            return self.json_message("Admin required", 403)
+        backups = self.hass.data[DOMAIN]["backups"]
+        try:
+            path = await self.hass.async_add_executor_job(backups.file, bid)
+        except ValueError:
+            return self.json_message("Invalid backup id", 400)
+        if path is None:
+            return self.json_message("Backup not found", 404)
+        return web.FileResponse(path, headers={"Content-Disposition": f'attachment; filename="avatar-weather-backup-{bid}.zip"'})

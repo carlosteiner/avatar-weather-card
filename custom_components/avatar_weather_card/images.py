@@ -149,6 +149,22 @@ class ImageLibrary:
         self._write(m)
         return m["slots"][name]
 
+    def replace_all(self, src: Path, slots: dict, source: dict | None, body: int | None = None) -> None:
+        """Replace the whole library with the pictures in `src` (<name>.webp for every slot): the old ones are deleted.
+        `source` says where they come from (a series) and is kept in the manifest. Blocking."""
+        self.dir.mkdir(parents=True, exist_ok=True)
+        m = self._read()
+        for name in slots:                                   # the new pictures first, so a failure never leaves the library empty
+            shutil.copyfile(src / f"{name}.webp", self.dir / f"{name}.tmp")
+            (self.dir / f"{name}.tmp").replace(self.dir / f"{name}.webp")
+        for f in self.dir.glob("*.webp"):
+            if f.stem not in slots:
+                f.unlink()
+        new = {"body": body or m.get("body", 900), "slots": slots}
+        if source:
+            new["series"] = source
+        self._write(new)
+
     def delete(self, name: str) -> bool:
         m = self._read()
         had = m["slots"].pop(name, None) is not None
@@ -217,13 +233,16 @@ class ReferenceLibrary:
 
 
 # --------------------------------------------------------------------------------------------------------------
-# Picture series: a set of pictures (a zip with a series.json) installed next to the user's own pictures.
-# The user's pictures always win over a series picture of the same name.
+# Picture series: a set of pictures (a zip with a series.json). Installing one REPLACES the user's library (the old pictures
+# are deleted), after an optional backup. Backups are zips in <root>/backups/ that can be listed, restored and deleted.
 
 SERIES_ID = re.compile(r"^[a-z0-9][a-z0-9_-]{0,39}$")
+BACKUP_ID = re.compile(r"^\d{8}-\d{6}(-\d{1,3})?$")
+SLOT_FILE = re.compile(r"^[A-Za-z0-9_-]{1,120}$")
 MAX_SERIES_BYTES = 150 * 1024 * 1024      # the zip
 MAX_SERIES_UNPACKED = 400 * 1024 * 1024   # all pictures together, after unpacking
 MAX_SERIES_FILES = 700
+MAX_BACKUPS = 20
 _META_TEXT = {"name": 80, "description": 500, "author": 80, "license": 80, "version": 40, "source": 200, "attribution": 300, "character": 600, "models": 300}
 
 
@@ -233,22 +252,124 @@ def _lum(im: Image.Image) -> float:
     return round(sum(px) / max(1, len(px)), 1)
 
 
-class SeriesLibrary:
-    """Installed series live in <root>/series/<id>/ (the pictures and a series.json with their measures)."""
+class BackupLibrary:
+    """Backups of the picture library: one zip per backup (the pictures, manifest.json and backup.json)."""
 
-    def __init__(self, root: Path) -> None:
-        self.dir = root / "series"
-        self.incoming = root / "incoming"   # zips dropped here by hand can be installed from the panel
+    def __init__(self, root: Path, images: ImageLibrary) -> None:
+        self.dir = root / "backups"
+        self.images = images
 
     def setup(self) -> None:
         self.dir.mkdir(parents=True, exist_ok=True)
-        self.incoming.mkdir(parents=True, exist_ok=True)
 
-    def _meta(self, sid: str) -> dict | None:
+    def _path(self, bid: str) -> Path:
+        if not BACKUP_ID.match(bid or ""):
+            raise ValueError("invalid backup id")
+        return self.dir / f"{bid}.zip"
+
+    def create(self, reason: str, name: str = "", description: str = "") -> dict:
+        m = self.images.listing()
+        slots = {n: s for n, s in m.get("slots", {}).items() if (self.images.dir / f"{n}.webp").is_file()}
+        if not slots:
+            raise ValueError("there are no pictures to back up")
+        self.dir.mkdir(parents=True, exist_ok=True)
+        if len(list(self.dir.glob("*.zip"))) >= MAX_BACKUPS:
+            raise ValueError(f"too many backups ({MAX_BACKUPS}): delete some first")
+        stamp = time.strftime("%Y%m%d-%H%M%S")
+        bid, k = stamp, 1
+        while (self.dir / f"{bid}.zip").exists():
+            k += 1
+            bid = f"{stamp}-{k}"
+        src = m.get("series") or {}
+        info = {"id": bid, "created": int(time.time()), "reason": str(reason)[:120], "count": len(slots),
+                "name": " ".join(str(name).split())[:60], "description": str(description).strip()[:300],
+                "series": str(src.get("name") or src.get("id") or "")[:80]}
+        tmp = self.dir / f"{bid}.tmp"
+        with zipfile.ZipFile(tmp, "w", zipfile.ZIP_STORED) as z:          # webp is already compressed
+            for n in slots:
+                z.write(self.images.dir / f"{n}.webp", f"{n}.webp")
+            z.writestr("manifest.json", json.dumps({**m, "slots": slots}, indent=1, sort_keys=True))
+            z.writestr("backup.json", json.dumps(info))
+        tmp.replace(self.dir / f"{bid}.zip")
+        return {**info, "bytes": (self.dir / f"{bid}.zip").stat().st_size}
+
+    def listing(self) -> list[dict]:
+        out = []
+        for p in sorted(self.dir.glob("*.zip"), reverse=True) if self.dir.is_dir() else []:
+            if not BACKUP_ID.match(p.stem):
+                continue
+            try:
+                with zipfile.ZipFile(p) as z:
+                    info = json.loads(z.read("backup.json"))
+                out.append({"id": p.stem, "created": int(info.get("created", 0)), "reason": str(info.get("reason", ""))[:120],
+                            "name": str(info.get("name", ""))[:60], "description": str(info.get("description", ""))[:300],
+                            "count": int(info.get("count", 0)), "series": str(info.get("series", ""))[:80], "bytes": p.stat().st_size})
+            except (OSError, KeyError, ValueError, zipfile.BadZipFile):
+                out.append({"id": p.stem, "created": int(p.stat().st_mtime), "reason": "damaged backup", "count": 0, "series": "", "name": "", "description": "",
+                            "bytes": p.stat().st_size, "damaged": True})
+        return out
+
+    def info(self, bid: str) -> dict | None:
+        """One backup's entry of the listing (None when it does not exist). Blocking."""
+        self._path(bid)
+        return next((b for b in self.listing() if b["id"] == bid), None)
+
+    def file(self, bid: str) -> Path | None:
+        p = self._path(bid)
+        return p if p.is_file() else None
+
+    def restore(self, bid: str, backup_first: bool) -> dict:
+        """Put a backup back as the library (the current pictures are deleted; backed up first when asked)."""
+        path = self._path(bid)
+        if not path.is_file():
+            raise ValueError("backup not found")
+        tmp = self.dir / f"restore-{int(time.time())}.tmp"
         try:
-            return json.loads((self.dir / sid / "series.json").read_text())
-        except (OSError, ValueError):
-            return None
+            try:
+                z = zipfile.ZipFile(path)
+                m = json.loads(z.read("manifest.json"))
+            except (OSError, KeyError, ValueError, zipfile.BadZipFile) as err:
+                raise ValueError("the backup is damaged") from err
+            with z:
+                tmp.mkdir(parents=True)
+                slots = {}
+                for n, s in (m.get("slots") or {}).items():
+                    if not SLOT_FILE.match(n) or not isinstance(s, dict):
+                        continue
+                    try:
+                        (tmp / f"{n}.webp").write_bytes(z.read(f"{n}.webp"))
+                    except KeyError:
+                        continue
+                    slots[n] = s
+            if not slots:
+                raise ValueError("the backup has no pictures")
+            made = None
+            if backup_first and self.images.listing().get("slots"):
+                made = self.create(f"before restoring backup {bid}")
+            self.images.replace_all(tmp, slots, m.get("series") if isinstance(m.get("series"), dict) else None,
+                                    m.get("body") if isinstance(m.get("body"), int) else None)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+        return {"restored": bid, "count": len(slots), "backup": made["id"] if made else ""}
+
+    def delete(self, bid: str) -> bool:
+        p = self._path(bid)
+        had = p.is_file()
+        p.unlink(missing_ok=True)
+        return had
+
+
+class SeriesLibrary:
+    """Installs a series zip as the picture library."""
+
+    def __init__(self, root: Path, images: ImageLibrary, backups: BackupLibrary) -> None:
+        self.root = root
+        self.images = images
+        self.backups = backups
+        self.incoming = root / "incoming"   # zips dropped here by hand can be installed from the panel
+
+    def setup(self) -> None:
+        self.incoming.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
     def id_of(data: bytes) -> str:
@@ -258,30 +379,19 @@ class SeriesLibrary:
         except (KeyError, ValueError, zipfile.BadZipFile) as err:
             raise ValueError("not a valid series zip (series.json missing)") from err
 
-    def installed(self) -> dict:
-        out = {}
-        if not self.dir.is_dir():
-            return out
-        for d in sorted(self.dir.iterdir()):
-            if not d.is_dir() or not SERIES_ID.match(d.name):
-                continue
-            m = self._meta(d.name)
-            if m:
-                out[d.name] = {k: m.get(k, "") for k in ("name", "version", "description", "author", "license", "attribution", "installed_at")}
-                out[d.name]["count"] = len(m.get("slots", {}))
-        return out
-
-    def slots(self, sid: str) -> dict:
-        m = self._meta(sid)
-        return (m or {}).get("slots", {})
+    def library_state(self) -> dict:
+        """What the library holds now: the number of pictures and the series it was installed from (if any)."""
+        m = self.images.listing()
+        return {"count": len(m.get("slots", {})), "series": m.get("series") or None}
 
     def incoming_files(self) -> list[dict]:
         if not self.incoming.is_dir():
             return []
         return [{"file": p.name, "bytes": p.stat().st_size} for p in sorted(self.incoming.glob("*.zip"))]
 
-    def install(self, sid: str, data: bytes, event_ids: list[str]) -> dict:
-        """Validate a series zip and install it as <sid>. Raises ValueError with a message for the user."""
+    def install(self, sid: str, data: bytes, event_ids: list[str], backup: bool) -> dict:
+        """Validate a series zip, then replace the library with it (backing the old pictures up first when `backup`).
+        Nothing is touched when the zip is not valid. Raises ValueError with a message for the user."""
         if not SERIES_ID.match(sid or ""):
             raise ValueError("invalid series id")
         if len(data) > MAX_SERIES_BYTES:
@@ -304,8 +414,8 @@ class SeriesLibrary:
         if meta_in.get("id") != sid:
             raise ValueError(f"series.json id ({meta_in.get('id')!r}) does not match {sid!r}")
         given = meta_in.get("slots") if isinstance(meta_in.get("slots"), dict) else {}
-        tmp = self.dir / f"{sid}.tmp-{int(time.time())}"
-        slots, skipped = {}, 0
+        tmp = self.root / f"series-{sid}.tmp-{int(time.time())}"
+        slots, skipped, made = {}, 0, None
         try:
             tmp.mkdir(parents=True)
             for info in infos:
@@ -335,40 +445,17 @@ class SeriesLibrary:
                 if not (isinstance(feet, int) and 0 < feet <= im.height):
                     feet = analyse(im)[0]
                 (tmp / name).write_bytes(raw)
-                slots[slot] = {"feetY": int(feet), "h": im.height, "w": im.width, "lum": _lum(im), "v": int(time.time())}
+                slots[slot] = {"feetY": int(feet), "h": im.height, "w": im.width, "lum": _lum(im), "v": int(time.time()), "auto": 1}
             if not slots:
                 raise ValueError("the series has no usable pictures")
-            meta = {"id": sid, "installed_at": int(time.time()), "slots": slots}
+            source = {"id": sid, "installed_at": int(time.time())}
             for k, mx in _META_TEXT.items():
                 v = meta_in.get(k, "")
-                meta[k] = str(v)[:mx] if isinstance(v, (str, int, float)) else ""
-            (tmp / "series.json").write_text(json.dumps(meta, indent=1, sort_keys=True))
-            target = self.dir / sid
-            if target.exists():
-                shutil.rmtree(target)
-            tmp.rename(target)
+                source[k] = str(v)[:mx] if isinstance(v, (str, int, float)) else ""
+            if backup and self.images.listing().get("slots"):
+                made = self.backups.create(f"before installing the series {source['name'] or sid}")   # a failure stops here: nothing deleted
+            self.images.replace_all(tmp, slots, source)
         finally:
-            if tmp.exists():
-                shutil.rmtree(tmp, ignore_errors=True)
-        return {"id": sid, "name": meta["name"], "version": meta["version"], "count": len(slots), "skipped": skipped}
-
-    def remove(self, sid: str) -> bool:
-        if not SERIES_ID.match(sid or ""):
-            return False
-        target = self.dir / sid
-        if target.is_dir():
-            shutil.rmtree(target)
-            return True
-        return False
-
-
-def merged_listing(user: dict, series: SeriesLibrary, active: list[str], images_url: str, series_url: str) -> dict:
-    """The pictures the card and the panel see: the active series first, then the user's own on top. Every slot carries
-    `u` (where the picture is served from) and, for series pictures, `series` (the id)."""
-    slots: dict = {}
-    for sid in active:
-        for name, s in series.slots(sid).items():
-            slots.setdefault(name, {**s, "u": f"{series_url}/{sid}/{name}.webp", "series": sid})
-    for name, s in user.get("slots", {}).items():
-        slots[name] = {**s, "u": f"{images_url}/{name}.webp"}
-    return {"body": user.get("body", 900), "slots": slots}
+            shutil.rmtree(tmp, ignore_errors=True)
+        return {"id": sid, "name": source["name"], "version": source["version"], "count": len(slots), "skipped": skipped,
+                "backup": made["id"] if made else ""}

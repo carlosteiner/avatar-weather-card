@@ -166,12 +166,12 @@ const W = [
   ["mittens", "gloves", "knitted mittens", 0, 1, "day", "u", ""],
   ["leather_gloves", "gloves", "leather gloves", 0, 2, "evening", "u", ""],
   // --- bags and accessories
-  ["tote", "accessory", "a canvas tote bag", 0, 6, "day", "u", "d"],
+  ["tote", "accessory", "a canvas tote bag hanging from the left shoulder", 0, 6, "day", "u", "d"],
   ["backpack", "accessory", "a small backpack", 0, 6, "day", "u", ""],
   ["crossbody", "accessory", "a small crossbody bag", 0, 6, "any", "u", "d"],
-  ["messenger", "accessory", "a messenger bag", 0, 6, "day", "m", ""],
-  ["handbag", "accessory", "a leather handbag", 0, 6, "any", "f", ""],
-  ["clutch", "accessory", "a small clutch", 0, 6, "evening", "f", "d"],
+  ["messenger", "accessory", "a messenger bag worn across the body", 0, 6, "day", "m", ""],
+  ["handbag", "accessory", "a leather handbag hanging from the left forearm", 0, 6, "any", "f", ""],
+  ["clutch", "accessory", "a small clutch held in the left hand", 0, 6, "evening", "f", "d"],
   ["watch", "accessory", "a slim wristwatch", 0, 6, "any", "u", "d"],
   ["belt", "accessory", "a leather belt", 0, 6, "any", "u", ""],
   ["necktie", "accessory", "a necktie", 1, 5, "evening", "m", ""],
@@ -216,7 +216,7 @@ const W = [
   ["henna", "accessory", "henna patterns on the hands", 0, 6, "any", "f", "t"],
   ["cross", "accessory", "a small cross pendant", 0, 6, "any", "u", "t"],
   ["star_david", "accessory", "a small Star of David pendant", 0, 6, "any", "u", "t"],
-  ["prayer_beads", "accessory", "a string of prayer beads in one hand", 0, 6, "any", "u", "t"],
+  ["prayer_beads", "accessory", "a string of prayer beads held in the left hand", 0, 6, "any", "u", "t"],
 ];
 
 // --- more options (v0.12)
@@ -331,14 +331,14 @@ const W2 = [
   ["fingerless", "gloves", "fingerless gloves", 0, 2, "day", "u", ""],
   ["touch_gloves", "gloves", "touchscreen gloves", 0, 2, "day", "u", ""],
   // bags and accessories
-  ["flask", "accessory", "a travel flask of hot tea", 0, 2, "day", "u", ""],
-  ["coffee_cup", "accessory", "a takeaway coffee cup", 0, 3, "day", "u", ""],
+  ["flask", "accessory", "a travel flask of hot tea held in the left hand", 0, 2, "day", "u", ""],
+  ["coffee_cup", "accessory", "a takeaway coffee cup held in the left hand", 0, 3, "day", "u", ""],
   ["earphones", "accessory", "earphones around the neck", 0, 6, "day", "u", ""],
-  ["book", "accessory", "a book under one arm", 0, 6, "day", "u", ""],
-  ["camera", "accessory", "a camera on a strap", 0, 6, "day", "u", ""],
-  ["beach_bag", "accessory", "a woven beach bag", 5, 6, "day", "u", ""],
-  ["straw_bag", "accessory", "a straw basket bag", 4, 6, "day", "f", ""],
-  ["satchel", "accessory", "a leather satchel", 0, 6, "day", "u", ""],
+  ["book", "accessory", "a book held under the left arm", 0, 6, "day", "u", ""],
+  ["camera", "accessory", "a camera on a strap around the neck", 0, 6, "day", "u", ""],
+  ["beach_bag", "accessory", "a woven beach bag over the left shoulder", 5, 6, "day", "u", ""],
+  ["straw_bag", "accessory", "a straw basket bag hanging from the left forearm", 4, 6, "day", "f", ""],
+  ["satchel", "accessory", "a leather satchel on a strap over the left shoulder", 0, 6, "day", "u", ""],
   ["rings", "accessory", "stacked rings", 0, 6, "any", "f", ""],
   ["signet", "accessory", "a signet ring", 0, 6, "any", "m", ""],
   ["cufflinks", "accessory", "cufflinks", 1, 5, "evening", "m", ""],
@@ -346,8 +346,7 @@ const W2 = [
   ["charm_bracelet", "accessory", "a charm bracelet", 0, 6, "any", "f", ""],
   ["long_pendant", "accessory", "a long pendant necklace", 0, 6, "evening", "f", ""],
   ["smartwatch", "accessory", "a smartwatch", 0, 6, "day", "u", ""],
-  ["bunch_flowers", "accessory", "a small bunch of flowers", 0, 6, "any", "f", ""],
-  ["umbrella_cane", "accessory", "a long folded umbrella carried like a walking stick", 0, 4, "any", "u", ""],
+  ["bunch_flowers", "accessory", "a small bunch of flowers held in the left hand", 0, 6, "any", "f", ""],
 ];
 export const WARDROBE = [...W, ...W2].map(([id, cat, text, lo, hi, when, g, fl]) => ({ id, cat, text, lo, hi, when, g, d: fl.includes("d"), trad: fl.includes("t"), always: fl.includes("a") }));
 
@@ -356,7 +355,7 @@ export const SKY_TAGS = { sun: "sunny", wet: "rainy / stormy", snow: "snowy", wi
 const SKY_TAG = {
   sunglasses: "sun", sunhat: "sun", straw_hat: "sun", panama: "sun", visor: "sun", beach_bag: "sun",
   rain_yellow: "wet", rain_trench: "wet", rain_shell: "wet", rain_packable: "wet", rain_cape: "wet", rain_poncho: "wet",
-  rain_boots: "wet", waterproof_boots: "wet", rain_hat: "wet", umbrella_cane: "wet",
+  rain_boots: "wet", waterproof_boots: "wet", rain_hat: "wet",
   snow_boots: "snow", ski_jacket: "snow", down_hood_coat: "snow", fur_boots: "snow", trapper: "snow", bobble_hat: "snow", mittens: "snow",
   wind_jacket: "wind", windbreaker: "wind", neck_gaiter: "wind", bandana: "wind",
 };
@@ -415,25 +414,25 @@ export const defaultEnabled = () => presetIds("neutral");
 
 // --- Weekend activities. [id, text, from band, to band, when, skies allowed (d dry, s sunny only, w wet, n snow), on by default]
 const ACT = [
-  ["coffee_walk", "Out for a slow weekend walk with a takeaway coffee, looking around with a relaxed smile.", 0, 6, "day", "dwn", 1],
-  ["shopping", "Out shopping, carrying two or three paper shopping bags from different shops.", 0, 6, "day", "dwn", 1],
-  ["market", "At a weekend market, a woven basket on one arm with fresh flowers and vegetables.", 2, 6, "day", "d", 1],
-  ["bakery", "Back from the bakery with a paper bag of fresh bread and pastries.", 0, 5, "day", "dwn", 1],
-  ["picnic", "Heading to a picnic: a small wicker basket in one hand and a folded blanket under the other arm.", 3, 5, "day", "s", 1],
-  ["beach", "Heading to the beach: a large beach bag over one shoulder, a rolled towel under the arm, sunglasses on.", 5, 6, "day", "s", 1],
-  ["ice_cream", "Enjoying an ice cream cone on a sunny weekend stroll.", 4, 6, "day", "s", 1],
-  ["cycling", "Walking a bicycle along, one hand on the handlebars, a helmet hanging from the other hand.", 2, 5, "day", "d", 1],
-  ["brunch", "On the way to brunch with friends, relaxed and chatty, a small bag over the shoulder.", 2, 6, "day", "d", 1],
-  ["park_book", "Strolling through the park with a paperback book in one hand.", 3, 5, "day", "d", 1],
-  ["winter_market", "At a winter market, holding a steaming paper cup of hot chocolate in both hands.", 0, 2, "day", "dn", 1],
-  ["snow_sled", "Having fun in the snow, pulling a small wooden sled by its rope.", 0, 1, "day", "n", 1],
-  ["dog_walk", "Out for a walk with a friendly medium-sized dog on a leash, the dog trotting ahead on the same base.", 0, 6, "day", "dwn", 0],
-  ["dinner_out", "On the way to dinner at a restaurant, a small bag in hand, in a good mood.", 0, 6, "evening", "dwn", 1],
-  ["cinema", "On the way to the cinema, a paper bag of popcorn in one hand, looking forward to the film.", 0, 6, "evening", "d", 1],
-  ["concert", "Heading to a concert with friends, excited, a small bag across the body.", 0, 6, "evening", "dw", 1],
-  ["drinks", "Out for drinks with friends, laughing, a small bag over the shoulder.", 0, 6, "evening", "dw", 1],
-  ["house_party", "Going to a house party with a bottle of wine in a paper bag and a small bunch of flowers.", 0, 6, "evening", "d", 1],
-  ["takeaway", "Walking home with takeaway food in a paper bag, a happy tired smile.", 0, 6, "evening", "dwn", 1],
+  ["coffee_walk", "Out for a slow weekend walk, a takeaway coffee cup held in the left hand, looking around with a relaxed smile.", 0, 6, "day", "dwn", 1],
+  ["shopping", "Out shopping, carrying exactly two paper shopping bags, both hanging straight down by their handles from the left hand.", 0, 6, "day", "dwn", 1],
+  ["market", "At a weekend market, a woven basket hanging from the left forearm with fresh flowers and vegetables in it.", 2, 6, "day", "d", 1],
+  ["bakery", "Back from the bakery with one paper bag of fresh bread and pastries held in the left hand.", 0, 5, "day", "dwn", 1],
+  ["picnic", "Heading to a picnic: a small wicker basket held in the left hand and a folded blanket held under the right arm.", 3, 5, "day", "s", 1],
+  ["beach", "Heading to the beach: a large beach bag over the left shoulder, a rolled towel held under the right arm, sunglasses on.", 5, 6, "day", "s", 1],
+  ["ice_cream", "Enjoying an ice cream cone held in the right hand on a sunny weekend stroll.", 4, 6, "day", "s", 1],
+  ["cycling", "Walking a bicycle along, the right hand on the handlebars, a helmet hanging by its strap from the left hand.", 2, 5, "day", "d", 1],
+  ["brunch", "On the way to brunch with friends, relaxed and chatty, a small bag over the left shoulder.", 2, 6, "day", "d", 1],
+  ["park_book", "Strolling through the park with a paperback book held in the left hand.", 3, 5, "day", "d", 1],
+  ["winter_market", "At a winter market, holding one steaming paper cup of hot chocolate with both hands.", 0, 2, "day", "dn", 1],
+  ["snow_sled", "Having fun in the snow, pulling a small wooden sled by its rope held in the left hand.", 0, 1, "day", "n", 1],
+  ["dog_walk", "Out for a walk with a friendly medium-sized dog on a leash held in the left hand, the dog trotting ahead on the same base.", 0, 6, "day", "dwn", 0],
+  ["dinner_out", "On the way to dinner at a restaurant, a small bag held in the left hand, in a good mood.", 0, 6, "evening", "dwn", 1],
+  ["cinema", "On the way to the cinema, one paper bag of popcorn held in the left hand, looking forward to the film.", 0, 6, "evening", "d", 1],
+  ["concert", "Heading to a concert with friends, excited, a small bag worn across the body.", 0, 6, "evening", "dw", 1],
+  ["drinks", "Out for drinks with friends, laughing, a small bag over the left shoulder.", 0, 6, "evening", "dw", 1],
+  ["house_party", "Going to a house party with a bottle of wine in a paper bag held in the left hand and a small bunch of flowers held in the right hand.", 0, 6, "evening", "d", 1],
+  ["takeaway", "Walking home with one paper bag of takeaway food held in the left hand, a happy tired smile.", 0, 6, "evening", "dwn", 1],
 ];
 export const ACTIVITIES = ACT.map(([id, text, lo, hi, when, skies, on]) => ({ id, text, lo, hi, when, skies, on: !!on }));
 export const defaultActivities = () => ACTIVITIES.filter((a) => a.on).map((a) => a.id);
@@ -541,16 +540,20 @@ export function composeOutfit(band, evening, enabledIds, seed, sky = "clear", co
   return { text: picks.map((x) => x.text).join(", "), missing, cats, picks, options };
 }
 
+// Hands, always the same: the umbrella is in the RIGHT hand, whatever is carried (bag, cup, shopping...) is in the LEFT hand.
+const UMBRELLA = "ONE open plain dark umbrella: the character grips its handle with the right hand, the arm bent so the open canopy is held just above and slightly behind the head. The canopy, the shaft and the handle are one single umbrella, entirely inside the frame, held by the hand and never floating. The left hand does not touch the umbrella.";
+const HANDS = "HANDS. The character has exactly two hands and every item described is drawn exactly once. Each item is gripped by a hand, hangs from it by its handle or strap, or rests on a shoulder or under an arm: nothing floats in the air, nothing is duplicated and nothing is held that is not described.";
+
 const SKY = {
   clear: "A clear sky: relaxed, a small natural smile.",
   cloudy: "An overcast day: calm, neutral expression.",
-  wind: "A windy day: hair and clothes blown sideways by the wind, one hand holding down her hair or an item from the outfit.",
+  wind: "A windy day: hair and clothes blown sideways by the wind, the right hand holding down the hair.",
   fog: "A foggy day: hands in pockets, collar turned up, a quiet thoughtful look. Do not draw any fog.",
-  rain: "Rainy day: a plain dark umbrella held in one hand, the whole umbrella inside the frame; the outfit above is kept exactly as described.",
-  storm: "A thunderstorm: the outer layer pulled up around the head (hood or collar up), hunched slightly against the wind and rain, one hand holding it closed. Do not draw rain or lightning.",
-  hail: "A hailstorm: hood or collar up, one forearm raised over the head to shield it, body turned away. Do not draw falling hail.",
-  sleet: "Cold sleet: a plain dark umbrella in one hand, damp slushy snow on the shoulders, a slight grimace. The whole umbrella inside the frame.",
-  snow: "Falling snow: snowflakes settled on the hair and shoulders, a small smile, one hand held out palm-up. Do not draw falling snowflakes.",
+  rain: "Rainy day: " + UMBRELLA + " The outfit above is kept exactly as described.",
+  storm: "A thunderstorm: the outer layer pulled up around the head (hood or collar up), hunched slightly against the wind and rain, the right hand holding it closed. Do not draw rain or lightning.",
+  hail: "A hailstorm: hood or collar up, the right forearm raised over the head to shield it, body turned away. Do not draw falling hail.",
+  sleet: "Cold sleet: " + UMBRELLA + " Damp slushy snow on the shoulders, a slight grimace.",
+  snow: "Falling snow: snowflakes settled on the hair and shoulders, a small smile, the right hand held out palm-up. Do not draw falling snowflakes.",
   snowstorm: "A snowstorm: head down against the wind, collar or hood up, hands tucked in. Do not draw falling snow.",
   fair: "A dry day: relaxed, a small natural smile.",
   any: "",
@@ -573,7 +576,7 @@ const BASE_SKY = {
 
 const MOMENT = {
   earlymorning: "Very early morning: soft cool light from one side, a sleepy fresh look, hair a little loose.",
-  morning: "Morning: fresh, clear light from one side, a takeaway coffee in one hand.",
+  morning: "Morning: fresh, clear light from one side.",
   midday: "Midday: bright light from high above, a short soft shadow at the feet, on the base only.",
   afternoon: "Afternoon: warm, slightly golden light from one side.",
   goldenhour: "Golden hour just before sunset: strong warm orange light from one side, shadow falling only across the body and the base (none on the background), warm rim light along the arm and hair.",
@@ -585,7 +588,7 @@ const MOMENT = {
 };
 const NIGHT_MOMENTS = { evening: 1, lateevening: 1, night: 1 };
 
-const WEEKEND = "It is the weekend: a relaxed, off-duty look, clothes a little more casual than usual, an easy smile, a small casual item (a tote bag or a takeaway coffee).";
+const WEEKEND = "It is the weekend: a relaxed, off-duty look, clothes a little more casual than usual, an easy smile, one small casual item, either a tote bag over the left shoulder or a takeaway coffee cup held in the left hand (only one of them).";
 const HUMID = "The air is muggy and damp: hair slightly frizzy with damp strands at the temples, a faint sheen on the skin, clothes a little clingy.";
 
 function parts(name) {   // name -> {event, temp, hum, sky, moment, weekend, music}
@@ -624,7 +627,7 @@ function bgText(prefs) {
 // ---------------------------------------------------------------------------------------------------------------
 // Music pictures: the character sits in an armchair, headphones on, while music plays.
 // ---------------------------------------------------------------------------------------------------------------
-const ARMCHAIR = "a plush deep-green corduroy armchair with rounded arms, a thick seat cushion and short dark wooden legs";
+const ARMCHAIR = "a plush deep-green corduroy armchair with rounded arms, a thick seat cushion and short dark wooden legs. The armchair is one solid, completely closed piece of furniture: seat, back and arms are fully upholstered with no gaps, holes, cut-outs or see-through areas, and nothing is missing from it";
 const MUSIC_POSE = [
   "curled up sideways with both legs tucked up on the seat",
   "reclining back with both legs stretched out over one armrest",
@@ -645,13 +648,13 @@ const MUSIC_MOMENT = {
 };
 // [id, text, when, from band, to band]
 const MUSIC_ACT = [
-  ["tea", "The character holds a steaming mug of tea in both hands.", "any", 0, 4],
-  ["book", "The character is reading an open paperback book held in one hand.", "any", 0, 6],
-  ["vinyl", "The character looks at a vinyl record sleeve held in one hand.", "any", 0, 6],
-  ["listening", "The character just listens, eyes closed, a content smile, one hand resting on the armrest.", "any", 0, 6],
-  ["wine", "The character holds a glass of red wine in one hand.", "evening", 0, 6],
-  ["popcorn", "A bowl of popcorn rests on the armrest next to the character.", "evening", 1, 6],
-  ["iced", "The character holds a tall glass of iced water with a slice of lemon.", "day", 4, 6],
+  ["tea", "The character holds exactly one steaming mug of tea with both hands.", "any", 0, 4],
+  ["book", "The character is reading one open paperback book held in the right hand; the left hand rests on the armrest.", "any", 0, 6],
+  ["vinyl", "The character looks at one vinyl record sleeve held in the right hand; the left hand rests on the armrest.", "any", 0, 6],
+  ["listening", "The character just listens, eyes closed, a content smile, the left hand resting on the armrest and the right hand resting in the lap.", "any", 0, 6],
+  ["wine", "The character holds exactly ONE glass of red wine in the right hand, and the left hand rests empty on the armrest. There is only one glass in the whole picture: no second glass in the other hand, none on the armrest or anywhere else.", "evening", 0, 6],
+  ["popcorn", "One single bowl of popcorn rests on the armrest next to the character; both hands are empty and resting.", "evening", 1, 6],
+  ["iced", "The character holds exactly one tall glass of iced water with a slice of lemon in the right hand; the left hand rests empty on the armrest. There is only one glass in the picture.", "day", 4, 6],
   ["blanket", "A soft blanket is draped over the character's knees.", "any", 0, 2],
 ];
 
@@ -676,7 +679,7 @@ function composeMusic(p, name, opts, enabled, style, tail, prefs) {
   if (MUSIC_MOMENT[p.moment]) bits.push(MUSIC_MOMENT[p.moment]);
   bits.push(act[1]);
   const text = style +
-    "POSE AND FRAMING. The character is seated in " + ARMCHAIR + ", the same armchair in every picture, seen from the side (the armchair from its side, three-quarter view), looking relaxed: " + pose + ". The character wears large cream over-ear headphones and is listening to music, a calm and happy mood. The whole armchair and the whole character are in frame, nothing cropped; they are centred with clear empty margin on all sides and fill about 85% of the image height. Everything held or lying near the character must be entirely inside the frame.\n\n" +
+    "POSE AND FRAMING. The character is seated in " + ARMCHAIR + ", the same armchair in every picture, seen from the side (the armchair from its side, three-quarter view), looking relaxed: " + pose + ". The character wears large cream over-ear headphones and is listening to music, a calm and happy mood. The whole armchair and the whole character are in frame, nothing cropped; they are centred with clear empty margin on all sides and fill about 85% of the image height. Everything held or lying near the character must be entirely inside the frame.\n\nHANDS. The character has exactly two hands and every item described is drawn exactly once: held by a hand or resting on the armrest, never floating, never duplicated.\n\n" +
     ((opts._bg ? opts._bg + "\n\n" : bgText(prefs))).replace(/\bbase\b/g, "armchair") +
     "THE ARMCHAIR STANDS ON NOTHING. No floor, no rug, no room, no wall, no window, no furniture, no horizon. Only the armchair, with a soft contact shadow directly under its four legs, and the lowest point of the picture is the bottom of the legs (plus the shoes, if any are described below).\n\n" +
     "NO ATMOSPHERE, NO MUSIC SYMBOLS. Draw no music notes, no sound waves, no visualiser, no glow, no lens flare, no haze. No text or lettering anywhere.\n\n" +
@@ -754,6 +757,7 @@ export function composePrompt(opts) {
   if (p.hum === "humid") bits.push(HUMID);
   if (MOMENT[p.moment]) bits.push(MOMENT[p.moment]);
   if (p.weekend) bits.push(act ? "It is the weekend, a relaxed off-duty look. " + act.text : WEEKEND);
+  bits.push(HANDS);
   const base = BASE_SKY[p.sky] || BASE_SKY.any;
   return { activity: act ? act.id : null, outfit: { picks: o.picks, options: o.options }, text: head + baseFor(base) + bits.join(" ") + tail, missing: o.missing };
 }
