@@ -17,9 +17,9 @@
 //   show_picture: true            (optional: show which picture was chosen and why)
 //   avatar_x: 0.74, avatar_size: 0.74   (optional: where she stands, 0-1 of the width; her height as a fraction of the card)
 // The picture is chosen by the same selector as the admin panel, from the global settings of the integration.
-import { createSelector, aggregateWeather, solarMoment, sunriseMinutes } from "./selector.js";
-import { createBackground } from "./avatar-weather-background.js";
-import { weatherIconSVG, SENSOR_ICONS } from "./avatar-weather-icons.js";
+import { createSelector, aggregateWeather, solarMoment, sunriseMinutes } from "./selector.js?v=0.1.0-2";
+import { createBackground } from "./avatar-weather-background.js?v=0.1.0-2";
+import { weatherIconSVG, SENSOR_ICONS } from "./avatar-weather-icons.js?v=0.1.0-2";
 
 const IMAGES = "/avatar_weather_card_images";
 const REFRESH_MS = 5 * 60 * 1000;   // settings and picture list
@@ -91,7 +91,7 @@ class AvatarWeatherCard extends HTMLElement {
   getCardSize() { return Math.max(3, Math.round((this._config ? this._config.height : 420) / 50)); }
   static getStubConfig() { return { name: "", height: 420 }; }
   // The visual editor ("Edit" on the card): loaded only when it is opened.
-  static async getConfigElement() { await import("./avatar-weather-card-editor.js"); return document.createElement("avatar-weather-card-editor"); }
+  static async getConfigElement() { await import("./avatar-weather-card-editor.js?v=0.1.0-2"); return document.createElement("avatar-weather-card-editor"); }
 
   set hass(hass) {
     this._hass = hass;

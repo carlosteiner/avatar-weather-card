@@ -16,7 +16,9 @@ from .store import ConfigStore
 from .views import BackupDownloadView, ReferenceUploadView, UploadView
 
 _LOGGER = logging.getLogger(__name__)
-VERSION = "0.1.0"
+# Cache-busting token for the frontend files (panel, card and the modules they import): change it whenever a frontend file changes,
+# and the same token in the import lines of avatar-weather-card.js and avatar-weather-panel.js.
+VERSION = "0.1.0-2"
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

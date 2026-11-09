@@ -1,6 +1,6 @@
 // Avatar Weather Card - admin panel (v0.14.0): settings + images.
-import { PART_KEYS, defaultParts, composePrompt, composeOutfit, WARDROBE, CATEGORIES, BAND_NAMES, defaultEnabled, presetIds, GENDERS, SKY_TAGS, COLORS, COLOR_FAMILIES, defaultColors, wardrobeGaps, ACTIVITIES, defaultActivities, DEFAULT_PREFS } from "./prompts.js";
-import { createSelector, aggregateWeather, solarMoment, sunriseMinutes } from "./selector.js";
+import { PART_KEYS, defaultParts, composePrompt, composeOutfit, WARDROBE, CATEGORIES, BAND_NAMES, defaultEnabled, presetIds, GENDERS, SKY_TAGS, COLORS, COLOR_FAMILIES, defaultColors, wardrobeGaps, ACTIVITIES, defaultActivities, DEFAULT_PREFS } from "./prompts.js?v=0.1.0-2";
+import { createSelector, aggregateWeather, solarMoment, sunriseMinutes } from "./selector.js?v=0.1.0-2";
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 class AvatarWeatherPanel extends HTMLElement {
