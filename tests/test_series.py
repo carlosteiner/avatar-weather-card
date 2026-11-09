@@ -54,7 +54,7 @@ m = imgs.listing(); assert m["slots"]["mild_clear_afternoon"]["feetY"] > 0 and m
 assert bk.listing() == []; print("  ok   no backup made when not asked, old pictures replaced")
 
 # install WITH backup, then restore it
-imgs.add("cold_snow_night", png())                        # a picture of the user on top of the series
+imgs.add("cold_snow_night", png())                        # a picture the user adds after the install
 r = lib.install("demo", make_zip({"mild_rain_afternoon.webp": png()}), [], backup=True)
 assert r["backup"] and r["count"] == 1 and files() == ["mild_rain_afternoon"], (r, files())
 bl = bk.listing(); assert len(bl) == 1 and bl[0]["count"] == 4 and "before installing" in bl[0]["reason"] and bl[0]["series"] == "Demo", bl

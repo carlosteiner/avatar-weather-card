@@ -35,7 +35,7 @@ def async_register(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_backup_delete)
 
 
-def _merged(hass: HomeAssistant) -> dict:
+def _listing(hass: HomeAssistant) -> dict:
     """The picture list the card and the panel see (blocking: run in the executor)."""
     return hass.data[DOMAIN]["images"].listing()
 
@@ -65,7 +65,7 @@ async def ws_config_set(hass, connection, msg):
 @websocket_api.require_admin
 @websocket_api.async_response
 async def ws_images_list(hass, connection, msg):
-    connection.send_result(msg["id"], await hass.async_add_executor_job(_merged, hass))
+    connection.send_result(msg["id"], await hass.async_add_executor_job(_listing, hass))
 
 
 @websocket_api.websocket_command(
@@ -101,7 +101,7 @@ async def ws_public_config(hass, connection, msg):
     Nothing about the avatar (description, wardrobe, prompts)."""
     d = hass.data[DOMAIN]
     cfg = d["store"].config
-    images = await hass.async_add_executor_job(_merged, hass)
+    images = await hass.async_add_executor_job(_listing, hass)
     connection.send_result(msg["id"], {
         "weather_sources": cfg["weather_sources"], "options": cfg["options"], "special_days": cfg["special_days"],
         "holiday_calendar": cfg["holiday_calendar"], "extra_holidays": cfg["extra_holidays"], "images": images,

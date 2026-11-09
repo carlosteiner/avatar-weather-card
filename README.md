@@ -58,7 +58,7 @@ sensors:                                  # optional extra panels, up to 3
 | `show_picture` | false | write which picture was chosen and why (handy while testing) |
 
 ## Pictures
-The pictures are not part of this repository. A default series is published separately (see the images repository linked from the releases) and installs from the **Images** tab → *Picture series* in one click. Installing a series replaces your pictures (it asks first whether to back them up; backups can be restored or deleted from the same tab), and you can add your own pictures afterwards. You can also install a series zip by hand, or build and share your own: see [docs/SERIES.md](docs/SERIES.md). How the names work and how a picture is chosen: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The pictures are not part of this repository. A default series is published separately (see the images repository linked from the releases) and installs from the **Images** tab → *Picture series* in one click. Installing a series replaces your pictures (it asks first whether to back them up; backups can be created with a name and a description, downloaded, restored or deleted from the same tab), and you can add your own pictures afterwards. You can also install a series zip by hand, or build and share your own: see [docs/SERIES.md](docs/SERIES.md). How the names work and how a picture is chosen: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 Pictures are served by Home Assistant without authentication (like any static path). Do not upload pictures of real people you do not want to be readable on your network, and note that some image generators refuse to work from a picture of a real person.
 
