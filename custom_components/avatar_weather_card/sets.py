@@ -293,6 +293,7 @@ class SetLibrary:
         given = meta_in.get("slots") if isinstance(meta_in.get("slots"), dict) else {}
         tmp = self.root / f"series-{sid}.tmp-{int(time.time())}"
         slots, skipped, made = {}, 0, None
+        unknown = []                            # pictures whose name matches no weather cell, music cell or event: they are not installed
         try:
             tmp.mkdir(parents=True)
             for info in infos:
@@ -304,6 +305,7 @@ class SetLibrary:
                 slot = name[:-5]
                 if not valid_name(slot, event_ids):
                     skipped += 1
+                    unknown.append(slot)
                     continue
                 if info.file_size > MAX_BYTES:
                     raise ValueError(f"{name}: picture too large")
@@ -348,6 +350,7 @@ class SetLibrary:
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
         return {"id": sid, "name": meta["name"], "version": meta["version"], "count": len(slots), "skipped": skipped,
+                "unknown": unknown[:30], "unknown_count": len(unknown),
                 "replaced": exists, "backup": made["id"] if made else ""}
 
     # ---------------------------------------------------------------- backups (one set per zip)

@@ -65,6 +65,7 @@ print("  ok   export -> install round trip; an existing id is never overwritten 
 good = {"mild_clear_afternoon.webp": png(), "music_cold_evening.webp": png(), "halloween_evening.webp": png(), "readme.txt": b"x", "bogus_name.webp": png()}
 r = S.install(make_zip(good), ["halloween"], replace=False, backup=False, expect_id="demo")
 assert r["count"] == 3 and r["skipped"] == 2 and r["id"] == "demo", r
+assert r["unknown"] == ["bogus_name"] and r["unknown_count"] == 1, r      # the wrong picture name is reported, readme.txt is not a picture
 assert S.info("demo")["name"] == "Demo" and S.info("default")["count"] == 1, "installing must not touch the other sets"
 print("  ok   install adds a new set, the others are untouched:", r)
 

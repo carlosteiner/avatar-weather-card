@@ -442,12 +442,14 @@ class AvatarWeatherPanel extends HTMLElement {
     box.querySelectorAll("[data-s-br]").forEach((b) => (b.onclick = () => restoreAsk(b, false)));
 
     // installing (catalog, incoming folder, uploaded zip): a new set; when the id is taken, ask before replacing that set
+    // pictures that were not installed because their name matches no cell: usually an event this installation does not have (Settings → special days)
+    const unknownNote = (r) => !r.unknown_count ? "" : ` ⚠ ${r.unknown_count} picture${r.unknown_count > 1 ? "s were" : " was"} NOT installed: their names match no weather cell, music cell or special day of this installation (${r.unknown.slice(0, 8).join(", ")}${r.unknown_count > 8 ? ", …" : ""}). If they belong to a special day, add a special day with that id (for example xmas or newyear) in the Settings tab and install the set again.`;
     const install = (call, label, existing) => {
       const attempt = async (replace, backup) => {
         lock(true); msg(replace && backup ? "Backing up and installing… (can take a minute)" : "Installing… (can take a minute)");
         try {
           const r = await call(replace, backup);
-          await refresh(); this._renderSetsMsg(box, `Installed “${r.name || r.id}”: ${r.count} pictures${r.skipped ? ` (${r.skipped} files skipped)` : ""}${r.backup ? ", the old pictures are saved in a backup" : ""} ✓ — pick it with the radio button to edit it, or choose it in a card.`);
+          await refresh(); this._renderSetsMsg(box, `Installed “${r.name || r.id}”: ${r.count} pictures${r.skipped ? ` (${r.skipped} files skipped)` : ""}${r.backup ? ", the old pictures are saved in a backup" : ""} ✓ — pick it with the radio button to edit it, or choose it in a card.${unknownNote(r)}`, !!r.unknown_count);
         } catch (e) {
           lock(false);
           if (e && (e.code === "exists" || e.exists)) return askReplace(e.exists || e.message);
@@ -479,9 +481,9 @@ class AvatarWeatherPanel extends HTMLElement {
   }
 
   // Shows a message under the sets list (after the list has been redrawn).
-  _renderSetsMsg(box, text) {
+  _renderSetsMsg(box, text, warn) {
     const el = box.querySelector("#smsg");
-    if (el) { el.className = "h"; el.textContent = text; }
+    if (el) { el.className = warn ? "err" : "h"; el.textContent = text; }
   }
 
   // Where finished sets are sent to be shared (the images repository).
