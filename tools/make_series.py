@@ -3,7 +3,8 @@
 
   python3 tools/make_series.py --src /config/avatar_weather_card/sets/<set-id> --out ./dist \\
       --id pencil-woman --name "Pencil sketch woman" --version 1.0.0 --author "Name" --license "CC BY 4.0" \\
-      --description "..." --attribution "..." --character "..." --models "..." --release-base https://github.com/OWNER/REPO/releases/download
+      --description "..." --attribution "..." --character "..." --models "..." --release-base https://github.com/OWNER/REPO/releases/download \\
+      [--prompts prompts.txt] [--index ../images-repo/index.json]
 
 The zip holds series.json (id, name, version, ..., slots with the soles line of every picture) and the .webp files, flat.
 The catalog entry (index-entry.json) has the size, the sha256 and the zip url to paste into the images repository's index.json.
@@ -21,6 +22,8 @@ def main() -> int:
     for k in ("description", "author", "license", "attribution", "character", "models", "source"):
         ap.add_argument("--" + k, default="")
     ap.add_argument("--release-base", default="", help="e.g. https://github.com/OWNER/REPO/releases/download")
+    ap.add_argument("--prompts", default="", help="the set's prompt file (prompts.txt) to put in the zip")
+    ap.add_argument("--index", default="", help="the images repository's index.json: the entry is added or replaced there")
     ap.add_argument("--exclude", default="", help="comma separated slot names to leave out")
     a = ap.parse_args()
     if not SERIES_ID.match(a.id):
@@ -36,6 +39,8 @@ def main() -> int:
     zpath = os.path.join(a.out, f"{a.id}-{a.version}.zip")
     with zipfile.ZipFile(zpath, "w", zipfile.ZIP_STORED) as z:     # webp is already compressed
         z.writestr("series.json", json.dumps(meta, indent=1, sort_keys=True))
+        if a.prompts:
+            z.write(a.prompts, "prompts.txt")
         for n in names:
             z.write(os.path.join(a.src, n + ".webp"), n + ".webp")
     data = open(zpath, "rb").read()
@@ -44,6 +49,10 @@ def main() -> int:
              "count": len(names), "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest(),
              "zip_url": f"{a.release_base.rstrip('/')}/{tag}/{os.path.basename(zpath)}" if a.release_base else ""}
     json.dump(entry, open(os.path.join(a.out, "index-entry.json"), "w"), indent=2)
+    if a.index:
+        idx = json.load(open(a.index)) if os.path.isfile(a.index) else {"series": []}
+        idx["series"] = [e for e in idx.get("series", []) if e.get("id") != a.id] + [entry]
+        json.dump(idx, open(a.index, "w"), indent=2, ensure_ascii=False)
     print(f"{zpath}: {len(names)} pictures, {len(data) / 1048576:.1f} MB, sha256 {entry['sha256'][:16]}…")
     return 0
 

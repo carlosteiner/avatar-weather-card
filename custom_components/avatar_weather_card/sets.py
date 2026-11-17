@@ -21,7 +21,7 @@ from pathlib import Path
 from PIL import Image
 
 from . import prompts as prompt_file
-from .images import MAX_BYTES, ImageLibrary, analyse, valid_name
+from .images import MAX_BYTES, ImageLibrary, analyse, normalise, remove_background, valid_name
 
 SET_ID = re.compile(r"^[a-z0-9][a-z0-9_-]{0,39}$")
 SERIES_ID = SET_ID                         # a catalog series id is the id of the set it is installed as
@@ -316,9 +316,15 @@ class SetLibrary:
                 im = im.convert("RGBA")
                 if im.width > 3000 or im.height > 3000:
                     raise ValueError(f"{name}: picture too large (max 3000 px per side)")
-                if im.getchannel("A").getextrema()[0] > 250:
-                    raise ValueError(f"{name}: no transparency")
                 feet = (given.get(slot) or {}).get("feetY")
+                if im.getchannel("A").getextrema()[0] > 250:      # no transparency: the plain background colour is removed, the figure normalised
+                    try:
+                        im = normalise(remove_background(im))
+                    except ValueError as err:
+                        raise ValueError(f"{name}: {err}") from err
+                    out = io.BytesIO()
+                    im.save(out, "WEBP", quality=88, alpha_quality=100, method=6)
+                    raw, feet = out.getvalue(), None
                 if not (isinstance(feet, int) and 0 < feet <= im.height):
                     feet = analyse(im)[0]
                 (tmp / name).write_bytes(raw)
@@ -408,6 +414,13 @@ class SetLibrary:
         p.unlink(missing_ok=True)
         return had
 
+    def _prompts_restore(self, sid: str, text: str | None) -> None:
+        """A restore brings back everything: the backup's prompt file, or (a backup without one) the built-in prompts."""
+        if text is not None:
+            self.prompts_set(sid, text)
+        else:
+            self._prompts_path(sid).unlink(missing_ok=True)
+
     def backup_restore(self, bid: str, backup_first: bool, as_new: bool = False) -> dict:
         """Put a backup back as the set it was taken from (replacing that set's pictures if it still exists, recreating it if not).
         `as_new`, or a backup that does not say which set it came from (made before sets existed): a NEW set, nothing is replaced."""
@@ -430,7 +443,8 @@ class SetLibrary:
             new_name = ""
             if as_new or not SET_ID.match(sid):
                 new_name = " ".join(str(info.get("name") or info.get("set_name") or "Restored backup").split())[:80]
-                sid = self._new_id(new_name)
+                same = next((i for i in self.ids() if str(self.meta(i).get("name", "")).strip().casefold() == new_name.casefold()), None)
+                sid = same or self._new_id(new_name)    # a set with the same name is overwritten (the panel asked first)
             with z:
                 tmp.mkdir(parents=True)
                 prompts_in = self._prompts_from_zip(z)
@@ -447,13 +461,14 @@ class SetLibrary:
                 raise ValueError("the backup has no pictures")
             made = None
             if new_name:
-                self._check_room()
-                (self.dir / sid).mkdir(parents=True)
+                over = self.exists(sid)
+                if not over:
+                    self._check_room()
+                    (self.dir / sid).mkdir(parents=True)
                 ImageLibrary(self.dir / sid).replace_all(tmp, slots, m.get("body") if isinstance(m.get("body"), int) else None)
                 self._write_meta(sid, {**(meta if isinstance(meta, dict) else {}), "name": new_name, "created": int(time.time())})
-                if prompts_in is not None:
-                    self.prompts_set(sid, prompts_in)
-                return {"restored": bid, "set": sid, "count": len(slots), "backup": "", "new": True}
+                self._prompts_restore(sid, prompts_in)
+                return {"restored": bid, "set": sid, "count": len(slots), "backup": "", "new": not over, "overwritten": over}
             if self.exists(sid):
                 if backup_first and self.lib(sid).listing().get("slots"):
                     made = self.backup_create(sid, f"before restoring backup {bid}")
@@ -463,8 +478,7 @@ class SetLibrary:
                 (self.dir / sid).mkdir(parents=True)
                 ImageLibrary(self.dir / sid).replace_all(tmp, slots, m.get("body") if isinstance(m.get("body"), int) else None)
             self._write_meta(sid, meta if isinstance(meta, dict) and meta else {"name": info.get("set_name") or sid})
-            if prompts_in is not None:             # a backup from before prompt files keeps the current prompts
-                self.prompts_set(sid, prompts_in)
+            self._prompts_restore(sid, prompts_in)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
         return {"restored": bid, "set": sid, "count": len(slots), "backup": made["id"] if made else ""}

@@ -374,7 +374,7 @@ class AvatarWeatherPanel extends HTMLElement {
       ${files.length ? `<h3 style="margin:14px 0 2px">Zip files in the incoming folder</h3>${files.join("")}` : ""}
 
       <h3 style="margin:16px 0 2px">Backups</h3>
-      <p class="h">A backup is a copy of one set's pictures, kept on Home Assistant (up to 20). <b>Restore</b> replaces the pictures of the set it was taken from (or recreates the set if you deleted it); <b>Restore as a new set</b> keeps everything you have and adds the backup as a separate set. Backups made before sets existed can only be restored as a new set.</p>
+      <p class="h">A backup is a copy of one set's pictures, kept on Home Assistant (up to 20). <b>Restore</b> brings back the pictures and the prompts of the set it was taken from (or recreates the set if you deleted it); if that set still exists you are asked first, because it is overwritten. <b>Restore as a new set</b> adds the backup as a separate set (unless a set with the same name exists: then you are asked to overwrite it). Backups made before sets existed can only be restored as a new set.</p>
       ${baks.join("") || `<p class="h">No backups yet.</p>`}
 
       <h3 style="margin:16px 0 2px">Share a set</h3>
@@ -428,16 +428,18 @@ class AvatarWeatherPanel extends HTMLElement {
       () => { const x = byId[b.dataset.sExp]; return `Downloaded ${b.dataset.sExp}.zip ✓${x.license && x.author ? "" : " — before sharing it, fill in author and licence in Rename / details."}`; })));
     box.querySelectorAll("[data-s-bdl]").forEach((b) => (b.onclick = () => run("Preparing the download…", () => download(`/api/avatar_weather_card/backup/${encodeURIComponent(b.dataset.sBdl)}`, `avatar-weather-backup-${b.dataset.sBdl}.zip`), () => "Downloaded ✓")));
     box.querySelectorAll("[data-s-bd]").forEach((b) => (b.onclick = () => { if (confirm("Delete this backup? This cannot be undone.")) run("Deleting…", () => this._hass.callWS({ type: "avatar_weather_card/backup_delete", backup_id: b.dataset.sBd }), () => "Backup deleted ✓"); }));
-    // as a new set: nothing is replaced (the only way for backups made before sets existed, which do not say where they come from)
-    box.querySelectorAll("[data-s-brn]").forEach((b) => (b.onclick = () => run("Restoring as a new set…", () => this._hass.callWS({ type: "avatar_weather_card/backup_restore", backup_id: b.dataset.sBrn, backup_first: false, as_new: true }),
-      (r) => `Restored ${r.count} pictures as the new set “${nameOf(r.set) === r.set ? r.set : nameOf(r.set)}” ✓ — pick it with the radio button to use it.`)));
-    box.querySelectorAll("[data-s-br]").forEach((b) => (b.onclick = () => {
-      const restore = (backup_first) => run(backup_first ? "Backing up and restoring…" : "Restoring…", () => this._hass.callWS({ type: "avatar_weather_card/backup_restore", backup_id: b.dataset.sBr, backup_first }),
-        (r) => `Restored ${r.count} pictures into the set “${nameOf(r.set)}” ✓`);
-      const x = byId[b.dataset.set];
-      if (!x || !x.count) return restore(false);
-      this._ask(msgEl, `Restoring this backup (${b.dataset.n} pictures) will <b>replace the ${x.count} pictures of the set “${esc2(x.name)}”</b>. Do you want to make a backup of them first?`, "Back up, then restore", "Restore without a backup", restore);
-    }));
+    // restore = pictures AND prompts of the backup. A set that already exists (same set, or same name) is overwritten, after a confirmation
+    const sameName = (n) => sets.find((x) => String(x.name || "").trim().toLowerCase() === String(n || "").trim().toLowerCase());
+    const restoreAsk = (b, asNew) => {
+      const bko = (Array.isArray(bk) ? bk : bk.backups || []).find((k) => k.id === (asNew ? b.dataset.sBrn : b.dataset.sBr)) || {};
+      const x = asNew ? sameName(bko.name || bko.set_name) : byId[b.dataset.set];
+      const restore = () => run("Restoring…", () => this._hass.callWS({ type: "avatar_weather_card/backup_restore", backup_id: asNew ? b.dataset.sBrn : b.dataset.sBr, backup_first: false, as_new: asNew }),
+        (r) => `Restored ${r.count} pictures and the prompts into the set “${nameOf(r.set) === r.set ? r.set : nameOf(r.set)}” ✓${r.overwritten || !r.new ? "" : " — pick it with the radio button to use it."}`);
+      if (!x) return restore();
+      this._ask(msgEl, `A set named <b>“${esc2(x.name)}”</b> already exists (${x.count} pictures). Restoring will <b>overwrite it: its pictures and prompts will be lost</b>. Continue?`, "Overwrite it", "Don't overwrite", (yes) => { if (yes) restore(); }, true);
+    };
+    box.querySelectorAll("[data-s-brn]").forEach((b) => (b.onclick = () => restoreAsk(b, true)));
+    box.querySelectorAll("[data-s-br]").forEach((b) => (b.onclick = () => restoreAsk(b, false)));
 
     // installing (catalog, incoming folder, uploaded zip): a new set; when the id is taken, ask before replacing that set
     const install = (call, label, existing) => {
@@ -597,7 +599,7 @@ class AvatarWeatherPanel extends HTMLElement {
     const freeName = (nm) => { if (!taken.has(nm)) return nm; let k = 2; while (taken.has(`${nm}_${k}`)) k++; return `${nm}_${k}`; };
     const send = async (files, cellName, secKey) => {
       files = files.filter((f) => /^image\/(png|webp)$/.test(f.type));
-      if (!files.length) { say("Only PNG or WebP pictures with a transparent background.", true); return; }
+      if (!files.length) { say("Only PNG or WebP pictures (transparent, or with a plain background that is removed automatically).", true); return; }
       let done = 0, last = null;
       for (const f of files) {
         const base = f.name.replace(/\.(png|webp)$/i, "").trim().toLowerCase();

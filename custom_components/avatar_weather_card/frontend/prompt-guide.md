@@ -99,13 +99,13 @@ These come from generating hundreds of pictures. Follow them unless the user ask
 
 ### The background (it is the user's choice: read the current STYLE)
 
-Pictures need a transparent background in the end. There are two ways, and the current file shows which one the user follows:
+Pictures end up with a transparent background (a flat chroma-key colour is removed automatically on upload). There are two ways, and the current file shows which one the user follows:
 
 - **The generator gives a transparent PNG** (for example ChatGPT): the STYLE asks for a transparent background, no ground shadow
   outside the ground ellipse.
 - **A flat colour that is removed afterwards** (a "chroma key", for example exactly `#808080` grey). Then nothing on the character
   may be close to that colour. Ask for clean, saturated colours: no grey, silver or charcoal clothes; no muted grey-greens such as
-  sage, olive, khaki or taupe; nothing transparent (clear umbrellas, plastic raincoats). These are punched out with the background.
+  sage, olive, khaki or taupe; nothing transparent (clear umbrellas, plastic raincoats). These are punched out with the background: every pixel of that colour is removed, also in the gaps between legs and arms.
 
 Keep the user's choice and the exact colour unless they ask to change them.
 

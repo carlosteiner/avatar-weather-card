@@ -70,6 +70,25 @@ print("  ok   install adds a new set, the others are untouched:", r)
 
 # replace with backup, then restore
 S.lib("demo").add("cold_snow_night", png())
+from PIL import Image as _I, ImageDraw as _D
+def webp_grey():
+    b = io.BytesIO(); _I.open(io.BytesIO(grey_bg())).save(b, "WEBP"); return b.getvalue()
+def noisy_webp():
+    b = io.BytesIO(); _I.effect_noise((200, 200), 90).convert("RGB").save(b, "WEBP"); return b.getvalue()
+def grey_bg():                                       # an opaque figure on a plain grey background
+    from PIL import Image as _I, ImageDraw as _D
+    im = _I.new("RGB", (300, 600), (140, 140, 140)); _D.Draw(im).rectangle((100, 100, 200, 560), fill=(180, 40, 40)); b = io.BytesIO(); im.save(b, "PNG"); return b.getvalue()
+GB = images.ImageLibrary(Path(tempfile.mkdtemp())); GB.setup()
+def legs_gap():                                      # two legs with a grey gap between them, and an arm gap: all grey must go
+    im = _I.new("RGB", (300, 600), (128, 128, 128)); dd = _D.Draw(im)
+    dd.rectangle((100, 100, 200, 350), fill=(180, 40, 40)); dd.rectangle((100, 350, 130, 560), fill=(40, 40, 180)); dd.rectangle((170, 350, 200, 560), fill=(40, 40, 180))
+    b = io.BytesIO(); im.save(b, "PNG"); return b.getvalue()
+GB.add("cold_rain_night", legs_gap()); g = _I.open(GB.dir / "cold_rain_night.webp").convert("RGBA")
+assert g.getchannel("A").getpixel((g.width // 2, g.height - 20)) == 0, "grey between the legs must be transparent"
+sl = GB.add("cold_rain_night", grey_bg()); assert sl["w"] < 150 and sl["h"] < 480, sl      # grey background removed and the margin cropped
+from PIL import Image as _I
+_n = io.BytesIO(); _I.effect_noise((200, 200), 90).convert("RGB").save(_n, "PNG")
+expect_error("noisy bg", lambda: GB.add("cold_rain_night", _n.getvalue()), "plain colour")
 r = S.install(make_zip({"mild_rain_afternoon.webp": png()}), [], replace=True, backup=True)
 assert r["replaced"] and r["backup"] and r["count"] == 1 and sorted(p.stem for p in S.lib("demo").dir.glob("*.webp")) == ["mild_rain_afternoon"], r
 bl = S.backups(); assert len(bl) == 1 and bl[0]["count"] == 4 and bl[0]["set"] == "demo" and "before updating" in bl[0]["reason"], bl
@@ -88,7 +107,9 @@ with _z.ZipFile(src) as zi, _z.ZipFile(legacy, "w") as zo:
         zo.writestr(n, d)
 before_demo = S.info("demo")["count"]
 r = S.backup_restore("20200101-000000", backup_first=True); assert r["new"] and r["set"] == "old-pencil-set" and r["count"] == 4 and S.info("old-pencil-set")["name"] == "Old pencil set", r
+S.update("demo", {"name": "Renamed demo"})          # names differ: as new adds a separate set, nothing is replaced
 r2 = S.backup_restore(bl[0]["id"], False, as_new=True); assert r2["new"] and r2["set"] != "demo" and S.info("demo")["count"] == before_demo
+r3 = S.backup_restore(bl[0]["id"], False, as_new=True); assert r3["overwritten"] and r3["set"] == r2["set"]   # same name now: overwritten
 assert any(b["id"] == "20200101-000000" and b["set"] == "" for b in S.backups())
 S.backup_delete("20200101-000000"); S.delete("old-pencil-set"); S.delete(r2["set"])
 print("  ok   legacy backups (no set) and 'as new' restore into a new set")
@@ -98,7 +119,9 @@ print("  ok   backups per set: create, restore over the set, recreate a deleted 
 before = S.ids()
 expect_error("no series.json", lambda: S.install(make_zip({"mild_clear_afternoon.webp": png()}, meta=False), [], replace=True, backup=False), "series.json")
 expect_error("bad id", lambda: S.install(make_zip({"mild_clear_afternoon.webp": png()}, meta={"id": "../x"}), [], replace=True, backup=False), "valid id")
-expect_error("opaque", lambda: S.install(make_zip({"mild_clear_afternoon.webp": png(opaque=True)}, sid="x1"), [], replace=False, backup=False), "no transparency")
+r = S.install(make_zip({"mild_clear_afternoon.webp": webp_grey()}, sid="x1"), [], replace=False, backup=False); assert r["count"] == 1, r   # opaque grey picture: background removed
+_im = _I.open(S.dir / "x1" / "mild_clear_afternoon.webp"); assert _im.mode == "RGBA" and _im.getchannel("A").getpixel((0, 0)) == 0; _im.close(); S.delete("x1")
+expect_error("opaque noisy", lambda: S.install(make_zip({"mild_clear_afternoon.webp": noisy_webp()}, sid="x2"), [], replace=False, backup=False), "plain colour")
 expect_error("empty", lambda: S.install(make_zip({"readme.txt": b"x"}, sid="x2"), [], replace=False, backup=False), "no usable pictures")
 expect_error("wrong id", lambda: S.install(make_zip({"mild_clear_afternoon.webp": png()}), [], replace=False, backup=False, expect_id="other"), "does not match")
 expect_error("not a zip", lambda: S.install(b"hello", [], replace=False, backup=False), "not a valid zip")
@@ -125,6 +148,12 @@ b = P.backup_create("ink", "test"); P.prompts_set("ink", "## STYLE\nChanged.\n")
 assert P.prompts_get("ink") == TXT
 P.prompts_set("ink", ""); assert P.prompts_get("ink") == "" and not P.info("ink")["prompts"]
 P.backup_restore(b["id"], backup_first=False); assert P.prompts_get("ink") == TXT     # restore brings the file back
+# a backup taken without prompts: restoring drops the prompts the set has now (everything comes from the backup)
+P.prompts_set("ink", ""); b2 = P.backup_create("ink", "no prompts"); P.prompts_set("ink", TXT)
+P.backup_restore(b2["id"], backup_first=False); assert P.prompts_get("ink") == "" and not P.info("ink")["prompts"]
+# restore as new with a name that already exists: that set is overwritten, no second set
+n_before = len(P.ids()); r = P.backup_restore(b["id"], False, as_new=True)
+assert r["set"] == "ink" and r["overwritten"] and not r["new"] and len(P.ids()) == n_before and P.prompts_get("ink") == TXT, r
 P.prompts_set("ink", ""); P.install(make_zip({"mild_rain_afternoon.webp": png()}, sid="ink"), [], replace=True, backup=False)
 assert P.prompts_get("ink") == ""                                                       # a zip without prompts keeps what was there
 expect_error("bad set id", lambda: P.prompts_set("../x", TXT), "not found")

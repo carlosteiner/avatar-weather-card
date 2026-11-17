@@ -9,7 +9,7 @@ import time
 import zipfile
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageChops
 
 TEMPS = ["freezing", "cold", "chilly", "mild", "warm", "hot", "hotdry", "hothumid", "heatwave", "any"]
 SKIES = ["clear", "cloudy", "wind", "fog", "rain", "storm", "hail", "sleet", "snow", "snowstorm", "fair", "any"]
@@ -25,6 +25,51 @@ def valid_name(name: str, event_ids: list[str]) -> bool:
     h = r"(_(humid|dry|normal))?"   # only "humid" has an effect; any other tag, or none, means normal
     pats = [rf"({t}){h}_({s})_({m}){_SUFFIX}", rf"music_({t}){h}_({m}){_SUFFIX}", rf"({ev})_({m})(_\d+)?"]
     return any(re.fullmatch(p, name) for p in pats)
+
+
+def normalise(im: Image.Image) -> Image.Image:
+    """Crop the empty margin and put the standing point in the middle, so all pictures line up. RGBA in, RGBA out."""
+    bbox = im.getchannel("A").point(lambda v: 255 if v > 20 else 0).getbbox()
+    if bbox is None:
+        raise ValueError("image is fully transparent")
+    pad = 3
+    im = im.crop((max(0, bbox[0] - pad), max(0, bbox[1] - pad), min(im.width, bbox[2] + pad), min(im.height, bbox[3] + pad)))
+    cx = analyse(im)[1]
+    shift = im.width // 2 - cx
+    if abs(shift) > 2:
+        canvas = Image.new("RGBA", (im.width + 2 * abs(shift), im.height), (0, 0, 0, 0))
+        canvas.paste(im, (2 * shift if shift > 0 else 0, 0))
+        im = canvas
+    return im
+
+
+def remove_background(im: Image.Image) -> Image.Image:
+    """Make a plain background (grey, white... any single colour) transparent. `im` is RGBA and opaque.
+    The background colour is the one of the picture's border; only the area connected to the border goes (grey inside the figure stays),
+    the edge is softened and its colour cleaned of the grey halo. ValueError when the border is not one plain colour."""
+    w, h = im.size
+    rgb = im.convert("RGB")
+    px = rgb.load()
+    step_x, step_y = max(1, w // 200), max(1, h // 200)
+    border = [px[x, y] for x in range(0, w, step_x) for y in (0, h - 1)] + [px[x, y] for y in range(0, h, step_y) for x in (0, w - 1)]
+    bg = tuple(sorted(c[i] for c in border)[len(border) // 2] for i in range(3))
+    near = sum(1 for c in border if max(abs(c[i] - bg[i]) for i in range(3)) <= 24)
+    if near < 0.85 * len(border):
+        raise ValueError("the background is not one plain colour: remove it first (or use a picture with a transparent background)")
+    T1, T2 = 12, 40                                         # difference from the background: up to T1 fully gone, over T2 fully kept
+    diff = ImageChops.difference(rgb, Image.new("RGB", rgb.size, bg))
+    d = ImageChops.lighter(ImageChops.lighter(diff.getchannel("R"), diff.getchannel("G")), diff.getchannel("B"))
+    # every pixel of the background colour goes, wherever it is (also between the legs and the arms), with a small tolerance
+    alpha = d.point(lambda v: 0 if v <= T1 else 255 if v >= T2 else int((v - T1) * 255 / (T2 - T1)))
+    # the semi-transparent edge pixels still carry some background colour: take it out (c = (c - bg*(1-a)) / a)
+    ab, data = alpha.tobytes(), bytearray(rgb.tobytes())
+    for i in (j for j, v in enumerate(ab) if 0 < v < 255):
+        a = ab[i] / 255.0
+        for c in range(3):
+            data[i * 3 + c] = max(0, min(255, int((data[i * 3 + c] - bg[c] * (1 - a)) / a)))
+    out = Image.frombytes("RGB", (w, h), bytes(data)).convert("RGBA")
+    out.putalpha(alpha)
+    return out
 
 
 def _row_widths(alpha: Image.Image) -> list[float]:
@@ -121,21 +166,13 @@ class ImageLibrary:
         im = im.convert("RGBA")
         if im.width > 3000 or im.height > 3000:
             raise ValueError("image too large (max 3000 px per side)")
-        alpha = im.getchannel("A")
-        bbox = alpha.point(lambda v: 255 if v > 20 else 0).getbbox()
-        if bbox is None:
-            raise ValueError("image is fully transparent: remove the background first")
-        if alpha.getextrema()[0] > 250:
-            raise ValueError("image has no transparency: remove the background first")
-        # normalise automatically: crop the empty margin, find the soles and put the standing point in the middle
-        pad = 3
-        im = im.crop((max(0, bbox[0] - pad), max(0, bbox[1] - pad), min(im.width, bbox[2] + pad), min(im.height, bbox[3] + pad)))
-        auto_feet, cx, _ = analyse(im)
-        shift = im.width // 2 - cx
-        if abs(shift) > 2:
-            canvas = Image.new("RGBA", (im.width + 2 * abs(shift), im.height), (0, 0, 0, 0))
-            canvas.paste(im, (2 * shift if shift > 0 else 0, 0))
-            im = canvas
+        if im.getchannel("A").getextrema()[0] > 250:     # no transparency: a plain background (grey #808080, white...) is removed here
+            im = remove_background(im)
+        try:
+            im = normalise(im)                           # crop the empty margin, put the standing point in the middle
+        except ValueError as err:
+            raise ValueError("image is fully transparent: remove the background first") from err
+        auto_feet = analyse(im)[0]
         gray = im.convert("L")
         alpha = im.getchannel("A")
         px = [g for g, a in zip(gray.getdata(), alpha.getdata()) if a > 128]
