@@ -21,6 +21,11 @@ export const DEFAULT_MOMENTS = { EARLYMORNING: "05:00", MORNING: "08:30", MIDDAY
 export const FOLD_TEMP = { freezing: "cold", heatwave: "hot" };
 export const FOLD_SKY = { storm: "rain", hail: "rain", sleet: "snow", snowstorm: "snow", fog: "cloudy", wind: "cloudy" };
 export const FOLD_MOMENT = { midday: "morning", goldenhour: "afternoon", lateevening: "evening" };
+// Music (2026-11-16): only three temperatures, cold / mild / hot, with the five moments and the weekend.
+export const MUSIC_TEMPS = ["cold", "mild", "hot"];
+export const FOLD_MUSIC_TEMP = { freezing: "cold", chilly: "cold", warm: "hot", heatwave: "hot" };
+// Humidity (2026-11-16): no longer chooses pictures. Old names with a humid/dry tag are still read, and a
+// humid picture is only used where no normal one exists.
 
 export function createSelector(opts = {}) {
   const WIND_KMH = opts.windKmh ?? 25, HUMID_PCT = opts.humidPct ?? 65;
@@ -179,6 +184,7 @@ export function createSelector(opts = {}) {
 
   function choose(slots, want, music, key) {
     const names = Object.keys(slots);
+    if (music) want = { ...want, temp: FOLD_MUSIC_TEMP[want.temp] || want.temp };
     let best = null;
     for (const name of names) {
       const p = parse(name);
@@ -222,7 +228,7 @@ export function createSelector(opts = {}) {
     // wind speed no longer makes a sky of its own: a "windy" condition counts as cloudy, a breeze under a clear sky stays clear
     const sky = FOLD_SKY[skyOf({ ...state, wind: null })] || skyOf({ ...state, wind: null });
     const t = tempBand(state.temp), temp = FOLD_TEMP[t] || t;
-    return { event: activeEvent(slots, d, requirePictures), temp, hum: HUM_TEMPS[temp] && HUM_SKIES[sky] ? humBand(state.humidity) : "any", sky, moment: FOLD_MOMENT[moment] || moment, weekend: weekendLooks && weekend };
+    return { event: activeEvent(slots, d, requirePictures), temp, hum: "any", sky, moment: FOLD_MOMENT[moment] || moment, weekend: weekendLooks && weekend };
   }
 
   return { parse, tempBand, humBand, skyOf, momentOf, foldMoment: (m) => FOLD_MOMENT[m] || m, want, choose, score, activeEvent };

@@ -11,14 +11,26 @@ from homeassistant.core import HomeAssistant
 
 from . import websocket_api as ws
 from .const import DOMAIN, IMAGES_URL, PANEL_URL, REFERENCE_URL, STATIC_URL
-from .images import BackupLibrary, ImageLibrary, ReferenceLibrary, SeriesLibrary
+from .images import ReferenceLibrary
+from .sets import SetLibrary
 from .store import ConfigStore
-from .views import BackupDownloadView, ReferenceUploadView, UploadView
+from .views import BackupDownloadView, ReferenceUploadView, SetExportView, SetImportView, UploadView
 
 _LOGGER = logging.getLogger(__name__)
 # Cache-busting token for the frontend files (panel, card and the modules they import): change it whenever a frontend file changes,
 # and the same token in the import lines of avatar-weather-card.js and avatar-weather-panel.js.
-VERSION = "0.1.0-2"
+VERSION = "0.3.0"
+
+
+async def _ensure_active(hass: HomeAssistant, store, sets: SetLibrary) -> None:
+    """The active set must exist: a fresh installation gets an empty "default" set, a lost one falls back to the first set."""
+    if await hass.async_add_executor_job(sets.exists, store.active_set):
+        return
+    ids = await hass.async_add_executor_job(sets.ids)
+    if not ids:
+        await hass.async_add_executor_job(lambda: sets.create("My pictures", sid="default"))
+        ids = ["default"]
+    await store.async_set_active(ids[0])
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -27,24 +39,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         data["store"] = ConfigStore(hass)
         await data["store"].async_load()
         ws.async_register(hass)
-        lib = ImageLibrary(Path(hass.config.path("avatar_weather_card")))
-        await hass.async_add_executor_job(lib.setup)
-        data["images"] = lib
-        ref = ReferenceLibrary(Path(hass.config.path("avatar_weather_card")))
+        root = Path(hass.config.path("avatar_weather_card"))
+        sets = SetLibrary(root)
+        await hass.async_add_executor_job(sets.setup)
+        data["sets"] = sets
+        await _ensure_active(hass, data["store"], sets)
+        ref = ReferenceLibrary(root)
         await hass.async_add_executor_job(ref.setup)
         data["reference"] = ref
-        root = Path(hass.config.path("avatar_weather_card"))
-        backups = BackupLibrary(root, lib)
-        series = SeriesLibrary(root, lib, backups)
-        await hass.async_add_executor_job(backups.setup)
-        await hass.async_add_executor_job(series.setup)
-        data["backups"] = backups
-        data["series"] = series
         hass.http.register_view(UploadView(hass))
         hass.http.register_view(ReferenceUploadView(hass))
         hass.http.register_view(BackupDownloadView(hass))
+        hass.http.register_view(SetExportView(hass))
+        hass.http.register_view(SetImportView(hass))
         await hass.http.async_register_static_paths(
-            [StaticPathConfig(IMAGES_URL, str(lib.dir), False), StaticPathConfig(REFERENCE_URL, str(ref.dir), False)]
+            [StaticPathConfig(IMAGES_URL, str(sets.dir), False), StaticPathConfig(REFERENCE_URL, str(ref.dir), False)]
         )
     if not data.get("static"):
         await hass.http.async_register_static_paths(

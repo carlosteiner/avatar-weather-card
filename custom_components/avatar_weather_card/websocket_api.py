@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import DEFAULT_CATALOG_URL, DOMAIN
-from .images import MAX_SERIES_BYTES, SERIES_ID, SeriesLibrary
+from .sets import MAX_SERIES_BYTES, SERIES_ID, META_TEXT, SetExists, SetLibrary
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,11 +33,23 @@ def async_register(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_backup_create)
     websocket_api.async_register_command(hass, ws_backup_restore)
     websocket_api.async_register_command(hass, ws_backup_delete)
+    websocket_api.async_register_command(hass, ws_sets_list)
+    websocket_api.async_register_command(hass, ws_set_create)
+    websocket_api.async_register_command(hass, ws_set_update)
+    websocket_api.async_register_command(hass, ws_set_duplicate)
+    websocket_api.async_register_command(hass, ws_set_delete)
+    websocket_api.async_register_command(hass, ws_set_activate)
+    websocket_api.async_register_command(hass, ws_prompts_get)
+    websocket_api.async_register_command(hass, ws_prompts_set)
 
 
-def _listing(hass: HomeAssistant) -> dict:
-    """The picture list the card and the panel see (blocking: run in the executor)."""
-    return hass.data[DOMAIN]["images"].listing()
+def _listing(hass: HomeAssistant, sid: str | None = None) -> dict:
+    """The picture list of a set (the active one when `sid` is empty or unknown), as the card and the panel see it.
+    Carries `set`, the id the pictures are served under (/avatar_weather_card_images/<set>/<name>.webp). Blocking: run in the executor."""
+    d = hass.data[DOMAIN]
+    sets: SetLibrary = d["sets"]
+    sid = sid if sid and sets.exists(sid) else d["store"].active_set
+    return {**sets.lib(sid).listing(), "set": sid, "set_name": sets.meta(sid)["name"]}
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/config_get"})
@@ -61,21 +73,27 @@ async def ws_config_set(hass, connection, msg):
     connection.send_result(msg["id"], cfg)
 
 
-@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/images_list"})
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/images_list", vol.Optional("set", default=""): str})
 @websocket_api.require_admin
 @websocket_api.async_response
 async def ws_images_list(hass, connection, msg):
-    connection.send_result(msg["id"], await hass.async_add_executor_job(_listing, hass))
+    connection.send_result(msg["id"], await hass.async_add_executor_job(_listing, hass, msg["set"]))
 
 
 @websocket_api.websocket_command(
-    {vol.Required("type"): f"{DOMAIN}/image_delete", vol.Required("name"): str}
+    {vol.Required("type"): f"{DOMAIN}/image_delete", vol.Required("name"): str, vol.Optional("set", default=""): str}
 )
 @websocket_api.require_admin
 @websocket_api.async_response
 async def ws_image_delete(hass, connection, msg):
     d = hass.data[DOMAIN]
-    ok = await hass.async_add_executor_job(d["images"].delete, msg["name"])
+    sid = msg["set"] or d["store"].active_set
+    try:
+        lib = await hass.async_add_executor_job(d["sets"].lib, sid)
+    except ValueError as err:
+        connection.send_error(msg["id"], "not_found", str(err))
+        return
+    ok = await hass.async_add_executor_job(lib.delete, msg["name"])
     connection.send_result(msg["id"], {"deleted": ok})
 
 
@@ -94,14 +112,14 @@ async def ws_reference_delete(hass, connection, msg):
     connection.send_result(msg["id"], {"deleted": ok})
 
 
-@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/public_config"})
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/public_config", vol.Optional("set", default=""): str})
 @websocket_api.async_response
 async def ws_public_config(hass, connection, msg):
     """What the Lovelace card needs, for any logged-in user: weather sources, options, special days, holidays and the picture list.
-    Nothing about the avatar (description, wardrobe, prompts)."""
+    Nothing about the prompts. `set`: the picture set the card wants (default: the active one)."""
     d = hass.data[DOMAIN]
     cfg = d["store"].config
-    images = await hass.async_add_executor_job(_listing, hass)
+    images = await hass.async_add_executor_job(_listing, hass, msg["set"])
     connection.send_result(msg["id"], {
         "weather_sources": cfg["weather_sources"], "options": cfg["options"], "special_days": cfg["special_days"],
         "holiday_calendar": cfg["holiday_calendar"], "extra_holidays": cfg["extra_holidays"], "images": images,
@@ -149,7 +167,7 @@ def _clean_item(x) -> dict | None:
 @websocket_api.require_admin
 @websocket_api.async_response
 async def ws_series_catalog(hass, connection, msg):
-    """The series on offer (from the catalog on the internet), the installed ones and the zips dropped in the incoming folder."""
+    """The sets on offer (from the catalog on the internet), the sets installed and the zips dropped in the incoming folder."""
     d = hass.data[DOMAIN]
     url = d["store"].config["series"]["catalog_url"] or DEFAULT_CATALOG_URL
     items, error = [], ""
@@ -159,18 +177,27 @@ async def ws_series_catalog(hass, connection, msg):
         items = [c for c in (_clean_item(x) for x in raw[:50]) if c]
     except (aiohttp.ClientError, ValueError, TimeoutError) as err:
         error = str(err) or err.__class__.__name__
-    library = await hass.async_add_executor_job(d["series"].library_state)
-    incoming = await hass.async_add_executor_job(d["series"].incoming_files)
-    connection.send_result(msg["id"], {
-        "catalog": items, "error": error, "url": url, "library": library, "incoming": incoming,
-    })
+    sets = await hass.async_add_executor_job(d["sets"].listing)
+    incoming = await hass.async_add_executor_job(d["sets"].incoming_files)
+    connection.send_result(msg["id"], {"catalog": items, "error": error, "url": url, "sets": sets, "incoming": incoming})
 
 
-@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/series_install", vol.Required("series_id"): str, vol.Required("backup"): bool})
+def _install_error(connection, msg, err: ValueError) -> None:
+    if isinstance(err, SetExists):
+        connection.send_error(msg["id"], "exists", err.sid)
+    else:
+        connection.send_error(msg["id"], "install_failed", str(err) or err.__class__.__name__)
+
+
+_INSTALL = {vol.Required("replace"): bool, vol.Required("backup"): bool}
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/series_install", vol.Required("series_id"): str, **_INSTALL})
 @websocket_api.require_admin
 @websocket_api.async_response
 async def ws_series_install(hass, connection, msg):
-    """Download a series from the catalog, check it, then REPLACE the picture library with it (`backup`: back the old pictures up first)."""
+    """Download a set from the catalog, check it and install it as a new set. A set with the same id is replaced only when
+    `replace` is true (and backed up first when `backup`); otherwise the error code is "exists"."""
     d = hass.data[DOMAIN]
     sid = msg["series_id"]
     url = d["store"].config["series"]["catalog_url"] or DEFAULT_CATALOG_URL
@@ -178,83 +205,175 @@ async def ws_series_install(hass, connection, msg):
         data = json.loads(await _download(hass, url, 1_000_000, 15))
         item = next((c for c in (_clean_item(x) for x in data.get("series", [])[:50]) if c and c["id"] == sid), None)
         if not item or not item["zip_url"]:
-            raise ValueError("series not found in the catalog")
+            raise ValueError("set not found in the catalog")
+        if await hass.async_add_executor_job(d["sets"].exists, sid) and not msg["replace"]:
+            raise SetExists(sid)
         blob = await _download(hass, item["zip_url"], MAX_SERIES_BYTES, 300)
         if item["sha256"] and hashlib.sha256(blob).hexdigest() != item["sha256"]:
             raise ValueError("the downloaded file does not match the catalog (sha256)")
         events = [x["id"] for x in d["store"].config["special_days"]]
-        result = await hass.async_add_executor_job(d["series"].install, sid, blob, events, msg["backup"])
+        result = await hass.async_add_executor_job(
+            lambda: d["sets"].install(blob, events, replace=msg["replace"], backup=msg["backup"], expect_id=sid))
     except (aiohttp.ClientError, ValueError, TimeoutError) as err:
-        _LOGGER.warning("Installing series %s failed: %s", sid, err)
-        connection.send_error(msg["id"], "install_failed", str(err) or err.__class__.__name__)
+        if not isinstance(err, SetExists):
+            _LOGGER.warning("Installing set %s failed: %s", sid, err)
+        _install_error(connection, msg, err)
         return
     connection.send_result(msg["id"], result)
 
 
-@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/series_install_file", vol.Required("file"): str, vol.Required("backup"): bool})
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/series_install_file", vol.Required("file"): str, **_INSTALL})
 @websocket_api.require_admin
 @websocket_api.async_response
 async def ws_series_install_file(hass, connection, msg):
-    """Install a series (replacing the library) from a zip dropped by hand in /config/avatar_weather_card/incoming/."""
+    """Install a set from a zip dropped by hand in /config/avatar_weather_card/incoming/ (same rules as the catalog)."""
     d = hass.data[DOMAIN]
     name = msg["file"]
-    series: SeriesLibrary = d["series"]
+    sets: SetLibrary = d["sets"]
     if not re.fullmatch(r"[A-Za-z0-9._ -]{1,120}\.zip", name) or ".." in name:
         connection.send_error(msg["id"], "invalid_file", "invalid file name")
         return
 
     def work():
-        path = series.incoming / name
+        path = sets.incoming / name
         if not path.is_file() or path.stat().st_size > MAX_SERIES_BYTES:
             raise ValueError("file not found or too large")
-        blob = path.read_bytes()
-        sid = series.id_of(blob)
-        return series.install(sid, blob, [x["id"] for x in d["store"].config["special_days"]], msg["backup"])
+        return sets.install(path.read_bytes(), [x["id"] for x in d["store"].config["special_days"]], replace=msg["replace"], backup=msg["backup"])
 
     try:
         result = await hass.async_add_executor_job(work)
     except ValueError as err:
-        connection.send_error(msg["id"], "install_failed", str(err))
+        _install_error(connection, msg, err)
         return
     connection.send_result(msg["id"], result)
 
 
-# --- backups of the picture library ------------------------------------------------------------------------------
+# --- the sets ----------------------------------------------------------------------------------------------------
 
-async def _backup_call(hass, connection, msg, fn, *args):
+async def _call(hass, connection, msg, fn, *args, code="failed"):
     try:
         result = await hass.async_add_executor_job(fn, *args)
     except ValueError as err:
-        connection.send_error(msg["id"], "backup_failed", str(err))
-        return
+        connection.send_error(msg["id"], code, str(err))
+        return None
     connection.send_result(msg["id"], result)
+    return result
 
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/sets_list"})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_sets_list(hass, connection, msg):
+    d = hass.data[DOMAIN]
+    sets = await hass.async_add_executor_job(d["sets"].listing)
+    connection.send_result(msg["id"], {"sets": sets, "active": d["store"].active_set})
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/set_create", vol.Required("name"): str, vol.Optional("description", default=""): str})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_set_create(hass, connection, msg):
+    await _call(hass, connection, msg, hass.data[DOMAIN]["sets"].create, msg["name"], msg["description"])
+
+
+_META_SCHEMA = {vol.Optional(k): str for k in META_TEXT}
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/set_update", vol.Required("set_id"): str, **_META_SCHEMA})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_set_update(hass, connection, msg):
+    """Rename a set and edit its details (description, author, licence, attribution, version...)."""
+    fields = {k: msg[k] for k in META_TEXT if k in msg}
+    await _call(hass, connection, msg, hass.data[DOMAIN]["sets"].update, msg["set_id"], fields)
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/set_duplicate", vol.Required("set_id"): str, vol.Optional("name", default=""): str})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_set_duplicate(hass, connection, msg):
+    await _call(hass, connection, msg, hass.data[DOMAIN]["sets"].duplicate, msg["set_id"], msg["name"])
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/set_delete", vol.Required("set_id"): str})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_set_delete(hass, connection, msg):
+    """Delete a set for good (back it up first if you may want it back). The active set cannot be deleted."""
+    d = hass.data[DOMAIN]
+    if msg["set_id"] == d["store"].active_set:
+        connection.send_error(msg["id"], "failed", "the active set cannot be deleted: make another set active first")
+        return
+    await _call(hass, connection, msg, lambda: {"deleted": d["sets"].delete(msg["set_id"])})
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/set_activate", vol.Required("set_id"): str})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_set_activate(hass, connection, msg):
+    d = hass.data[DOMAIN]
+    if not await hass.async_add_executor_job(d["sets"].exists, msg["set_id"]):
+        connection.send_error(msg["id"], "failed", "set not found")
+        return
+    await d["store"].async_set_active(msg["set_id"])
+    connection.send_result(msg["id"], {"active": msg["set_id"]})
+
+
+# --- the prompt file of a set ------------------------------------------------------------------------------------
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/prompts_get", vol.Optional("set", default=""): str})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_prompts_get(hass, connection, msg):
+    """The prompt file of a set (default: the active one). `text` is "" when the set has none: the panel then uses the built-in file."""
+    d = hass.data[DOMAIN]
+    sid = msg["set"] or d["store"].active_set
+
+    def work():
+        text = d["sets"].prompts_get(sid)
+        return {"set": sid, "text": text, "custom": bool(text)}
+
+    await _call(hass, connection, msg, work, code="not_found")
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/prompts_set", vol.Optional("set", default=""): str, vol.Required("text"): str})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_prompts_set(hass, connection, msg):
+    """Save the prompt file of a set; empty text goes back to the built-in one."""
+    d = hass.data[DOMAIN]
+    sid = msg["set"] or d["store"].active_set
+    await _call(hass, connection, msg, lambda: {"set": sid, **d["sets"].prompts_set(sid, msg["text"])}, code="invalid_prompts")
+
+
+# --- backups of the sets -----------------------------------------------------------------------------------------
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/backups_list"})
 @websocket_api.require_admin
 @websocket_api.async_response
 async def ws_backups_list(hass, connection, msg):
-    d = hass.data[DOMAIN]
-    await _backup_call(hass, connection, msg, lambda: {"backups": d["backups"].listing(), "library": d["series"].library_state()})
+    await _call(hass, connection, msg, lambda: {"backups": hass.data[DOMAIN]["sets"].backups()}, code="backup_failed")
 
 
-@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/backup_create", vol.Optional("name", default=""): str, vol.Optional("description", default=""): str})
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/backup_create", vol.Required("set_id"): str,
+                                  vol.Optional("name", default=""): str, vol.Optional("description", default=""): str})
 @websocket_api.require_admin
 @websocket_api.async_response
 async def ws_backup_create(hass, connection, msg):
-    await _backup_call(hass, connection, msg, hass.data[DOMAIN]["backups"].create, "manual backup", msg["name"], msg["description"])
+    await _call(hass, connection, msg, hass.data[DOMAIN]["sets"].backup_create, msg["set_id"], "manual backup", msg["name"], msg["description"],
+                code="backup_failed")
 
 
-@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/backup_restore", vol.Required("backup_id"): str, vol.Required("backup_first"): bool})
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/backup_restore", vol.Required("backup_id"): str, vol.Required("backup_first"): bool, vol.Optional("as_new", default=False): bool})
 @websocket_api.require_admin
 @websocket_api.async_response
 async def ws_backup_restore(hass, connection, msg):
-    """Put a backup back as the picture library; the current pictures are deleted (`backup_first`: backed up before)."""
-    await _backup_call(hass, connection, msg, hass.data[DOMAIN]["backups"].restore, msg["backup_id"], msg["backup_first"])
+    """Put a backup back as the set it was taken from: that set's pictures are replaced (`backup_first`: backed up before)."""
+    await _call(hass, connection, msg, hass.data[DOMAIN]["sets"].backup_restore, msg["backup_id"], msg["backup_first"], msg["as_new"], code="backup_failed")
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/backup_delete", vol.Required("backup_id"): str})
 @websocket_api.require_admin
 @websocket_api.async_response
 async def ws_backup_delete(hass, connection, msg):
-    await _backup_call(hass, connection, msg, hass.data[DOMAIN]["backups"].delete, msg["backup_id"])
+    await _call(hass, connection, msg, hass.data[DOMAIN]["sets"].backup_delete, msg["backup_id"], code="backup_failed")

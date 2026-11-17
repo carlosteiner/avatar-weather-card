@@ -17,9 +17,9 @@
 //   show_picture: true            (optional: show which picture was chosen and why)
 //   avatar_x: 0.74, avatar_size: 0.74   (optional: where she stands, 0-1 of the width; her height as a fraction of the card)
 // The picture is chosen by the same selector as the admin panel, from the global settings of the integration.
-import { createSelector, aggregateWeather, solarMoment, sunriseMinutes } from "./selector.js?v=0.1.0-2";
-import { createBackground } from "./avatar-weather-background.js?v=0.1.0-2";
-import { weatherIconSVG, SENSOR_ICONS } from "./avatar-weather-icons.js?v=0.1.0-2";
+import { createSelector, aggregateWeather, solarMoment, sunriseMinutes } from "./selector.js?v=0.3.0";
+import { createBackground } from "./avatar-weather-background.js?v=0.3.0";
+import { weatherIconSVG, SENSOR_ICONS } from "./avatar-weather-icons.js?v=0.3.0";
 
 const IMAGES = "/avatar_weather_card_images";
 const REFRESH_MS = 5 * 60 * 1000;   // settings and picture list
@@ -82,6 +82,8 @@ class AvatarWeatherCard extends HTMLElement {
   }
 
   setConfig(config) {
+    const set = (config && config.image_set) || "";
+    if (this._config && (this._config.image_set || "") !== set) { this._data = null; this._loadedAt = 0; }   // another picture set: load its list
     this._config = { height: 420, name: "", show_clock: true, show_details: true, show_forecast: true, show_picture: false, layout: "cards", music_controls: true, pause_grace: 30, avatar_x: 0.74, ...config };
     this._build();
     this._last = "";
@@ -91,7 +93,7 @@ class AvatarWeatherCard extends HTMLElement {
   getCardSize() { return Math.max(3, Math.round((this._config ? this._config.height : 420) / 50)); }
   static getStubConfig() { return { name: "", height: 420 }; }
   // The visual editor ("Edit" on the card): loaded only when it is opened.
-  static async getConfigElement() { await import("./avatar-weather-card-editor.js?v=0.1.0-2"); return document.createElement("avatar-weather-card-editor"); }
+  static async getConfigElement() { await import("./avatar-weather-card-editor.js?v=0.3.0"); return document.createElement("avatar-weather-card-editor"); }
 
   set hass(hass) {
     this._hass = hass;
@@ -110,7 +112,7 @@ class AvatarWeatherCard extends HTMLElement {
     this._loading = (async () => {
       try {
         try {
-          this._data = await this._hass.callWS({ type: "avatar_weather_card/public_config" });
+          this._data = await this._hass.callWS({ type: "avatar_weather_card/public_config", set: (this._config && this._config.image_set) || "" });
         } catch (e) {   // an older integration without the public command: administrators can still read the settings
           const [cfg, images] = await Promise.all([
             this._hass.callWS({ type: "avatar_weather_card/config_get" }),
@@ -244,8 +246,14 @@ class AvatarWeatherCard extends HTMLElement {
   }
 
   // The picture as a loaded <img>, handed to the canvas when it is ready.
+  // Where a picture is served: /avatar_weather_card_images/<set>/<name>.webp (<set> is the picture set this card uses).
+  _src(name, slot) {
+    const set = this._data && this._data.images && this._data.images.set;
+    return `${slot.u || `${IMAGES}${set ? "/" + encodeURIComponent(set) : ""}/${encodeURIComponent(name)}.webp`}?v=${slot.v || 0}`;
+  }
+
   _show(name, slot, body) {
-    const src = `${slot.u || `${IMAGES}/${encodeURIComponent(name)}.webp`}?v=${slot.v || 0}`;
+    const src = this._src(name, slot);
     let im = this._imgs.get(src);
     const give = () => { if (this._bg && this._want === src) this._bg.setCharacter({ img: im, feetY: slot.feetY, body, lit: (slot.lum || 255) < EVENING_LUM }); };
     this._want = src;
@@ -385,7 +393,7 @@ class AvatarWeatherCard extends HTMLElement {
     const rm = pickPicture(this._data, states, new Date(), { musicKey: this._salt + "|" + key });
     const av = sr.getElementById("npa"), img = sr.getElementById("npimg");
     if (rm.music && slots[rm.music.name]) {
-      const src = `${slots[rm.music.name].u || `${IMAGES}/${encodeURIComponent(rm.music.name)}.webp`}?v=${slots[rm.music.name].v || 0}`;
+      const src = this._src(rm.music.name, slots[rm.music.name]);
       if (img.getAttribute("src") !== src) img.setAttribute("src", src);
       av.classList.add("has");
     } else av.classList.remove("has");

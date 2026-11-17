@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build a picture series zip (and its catalog entry) from a folder of pictures + manifest.json.
 
-  python3 tools/make_series.py --src /config/avatar_weather_card/characters --out ./dist \\
+  python3 tools/make_series.py --src /config/avatar_weather_card/sets/<set-id> --out ./dist \\
       --id pencil-woman --name "Pencil sketch woman" --version 1.0.0 --author "Name" --license "CC BY 4.0" \\
       --description "..." --attribution "..." --character "..." --models "..." --release-base https://github.com/OWNER/REPO/releases/download
 

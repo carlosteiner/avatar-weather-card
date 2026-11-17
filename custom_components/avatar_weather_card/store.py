@@ -9,8 +9,6 @@ from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN
 
-PROMPT_PARTS = ("character", "style", "pose", "background", "base", "noweather", "final")
-
 STORAGE_VERSION = 1
 DATE_RE = re.compile(r"^(\d{4}-)?\d{2}-\d{2}( \d{2}:\d{2})?$")
 TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
@@ -34,7 +32,6 @@ DEFAULTS = {
         "sun_entity": "sun.sun",
         "temp_bands": {"heatwave": 35, "hot": 29, "warm": 23, "mild": 17, "chilly": 10, "cold": 2},
     },
-    "avatar": {"description": "", "wardrobe": None, "colors": None, "activities": None, "prefs": {"style": "neutral", "day_shoes": "", "evening_shoes": "", "summer_shoes": "", "extra": "", "bg": "transparent", "bgColor": "#808080", "parts": {}}},     # optional free text about the character (the reference picture is the main source)
     "holiday_calendar": "",
     "extra_holidays": [],
     "special_days": [
@@ -42,6 +39,7 @@ DEFAULTS = {
         {"id": "xmas", "start": "12-25", "end": "12-25"},
         {"id": "newyear", "start": "12-31", "end": "12-31"},
     ],
+    "sets": {"active": "default"},   # the picture set edited in the Images tab (the cards use it unless they name another one)
     "series": {"catalog_url": ""},   # where the list of picture series comes from; empty = the default one
 }
 
@@ -114,61 +112,7 @@ def validate(cfg: dict) -> dict:
     t = out["options"]["temp_bands"]
     if not (t["heatwave"] > t["hot"] > t["warm"] > t["mild"] > t["chilly"] > t["cold"]):
         raise ValueError("temperature thresholds must decrease: heatwave > hot > warm > mild > chilly > cold")
-    av = cfg.get("avatar", {})
-    if not isinstance(av, dict):
-        raise ValueError("avatar must be an object")
-    desc = av.get("description", "")
-    if not isinstance(desc, str) or len(desc) > 1500:
-        raise ValueError("avatar description: text up to 1500 characters")
-    out["avatar"]["description"] = desc.strip()
-    wd = av.get("wardrobe")   # list of ticked wardrobe option ids, or None = the defaults
-    if wd is not None:
-        if not isinstance(wd, list) or len(wd) > 400 or not all(isinstance(i, str) and re.match(r"^[a-z0-9_]{1,40}$", i) for i in wd):
-            raise ValueError("wardrobe must be a list of option ids")
-        wd = list(dict.fromkeys(wd))
-    out["avatar"]["wardrobe"] = wd
-    co = av.get("colors")   # list of ticked colour ids, or None = the defaults
-    if co is not None:
-        if not isinstance(co, list) or len(co) > 80 or not all(isinstance(i, str) and re.match(r"^[a-z0-9_]{1,40}$", i) for i in co):
-            raise ValueError("colors must be a list of colour ids")
-        co = list(dict.fromkeys(co))
-    out["avatar"]["colors"] = co
-    ac = av.get("activities")   # list of ticked weekend-activity ids, or None = the defaults
-    if ac is not None:
-        if not isinstance(ac, list) or len(ac) > 80 or not all(isinstance(i, str) and re.match(r"^[a-z0-9_]{1,40}$", i) for i in ac):
-            raise ValueError("activities must be a list of activity ids")
-        ac = list(dict.fromkeys(ac))
-    out["avatar"]["activities"] = ac
-    pr = av.get("prefs", {})
-    if not isinstance(pr, dict):
-        raise ValueError("avatar prefs must be an object")
-    if pr.get("style", "neutral") not in ("neutral", "feminine", "masculine"):
-        raise ValueError("wardrobe style must be neutral, feminine or masculine")
-    out["avatar"]["prefs"]["style"] = pr.get("style", "neutral")
-    for k, mx in (("day_shoes", 120), ("evening_shoes", 120), ("summer_shoes", 120), ("extra", 500)):
-        v = pr.get(k, "")
-        if not isinstance(v, str) or len(v) > mx:
-            raise ValueError(f"prefs {k}: text up to {mx} characters")
-        out["avatar"]["prefs"][k] = v.strip()
-    if pr.get("bg", "transparent") not in ("transparent", "solid"):
-        raise ValueError("background must be transparent or solid")
-    out["avatar"]["prefs"]["bg"] = pr.get("bg", "transparent")
-    bc = pr.get("bgColor", "#808080")
-    if not (isinstance(bc, str) and re.fullmatch(r"#[0-9a-fA-F]{6}", bc)):
-        raise ValueError("background colour must look like #808080")
-    out["avatar"]["prefs"]["bgColor"] = bc.upper()
-    parts = pr.get("parts", {})   # the fixed sections of every prompt, as edited by the user (empty = built-in text)
-    if not isinstance(parts, dict):
-        raise ValueError("prompt parts must be an object")
-    clean = {}
-    for k, v in parts.items():
-        if k not in PROMPT_PARTS:
-            raise ValueError(f"unknown prompt part {k}")
-        if not isinstance(v, str) or len(v) > 4000:
-            raise ValueError(f"prompt part {k}: text up to 4000 characters")
-        if v.strip():
-            clean[k] = v.strip()
-    out["avatar"]["prefs"]["parts"] = clean
+    # "avatar" (notes, wardrobe, colours, activities, prompt parts) was dropped in 0.3: the prompts are now one file per set
     cal = cfg.get("holiday_calendar", "")
     if cal and not (isinstance(cal, str) and cal.startswith("calendar.")):
         raise ValueError("holiday_calendar must be a calendar.* id")
@@ -195,6 +139,11 @@ def validate(cfg: dict) -> dict:
     if url and not (isinstance(url, str) and re.match(r"^https://\S{4,280}$", url)):
         raise ValueError("series.catalog_url must be an https address")
     out["series"] = {"catalog_url": url}   # an old "active" list from earlier versions is dropped
+    st = cfg.get("sets", {})
+    active = st.get("active", "default") if isinstance(st, dict) else "default"
+    if not (isinstance(active, str) and re.fullmatch(r"[a-z0-9][a-z0-9_-]{0,39}", active)):
+        raise ValueError("sets.active must be a set id")
+    out["sets"] = {"active": active}
     return out
 
 
@@ -211,7 +160,16 @@ class ConfigStore:
             except ValueError:
                 self.config = deepcopy(DEFAULTS)
 
+    @property
+    def active_set(self) -> str:
+        return self.config["sets"]["active"]
+
+    async def async_set_active(self, sid: str) -> None:
+        self.config = validate({**self.config, "sets": {"active": sid}})
+        await self._store.async_save(self.config)
+
     async def async_save(self, cfg: dict) -> dict:
-        self.config = validate(cfg)
+        # the active set is changed only by async_set_active: a panel saving its (maybe stale) copy of the settings must not undo it
+        self.config = validate({**cfg, "sets": self.config["sets"]})
         await self._store.async_save(self.config)
         return self.config

@@ -4,8 +4,11 @@
 // the editor only covers what is specific to this one card.
 const DEFAULTS = { layout: "cards", clock_size: 1, music_controls: true, pause_grace: 30, height: 420, avatar_x: 0.74, avatar_size: 0.74, show_clock: true, show_details: true, show_forecast: true, show_picture: false };
 
+const ACTIVE = "__active";   // the choice "the active set" (stored as no image_set at all)
+
 const SCHEMA = [
   { name: "name", selector: { text: {} } },
+  { name: "image_set", selector: { select: { mode: "dropdown", options: [{ value: ACTIVE, label: "The active set" }] } } },
   { name: "layout", selector: { select: { mode: "dropdown", options: [{ value: "cards", label: "Cards (glass panels, like the web page)" }, { value: "classic", label: "Classic (bare text)" }] } } },
   { name: "height", selector: { number: { min: 200, max: 900, step: 10, mode: "slider", unit_of_measurement: "px" } } },
   { name: "clock_size", selector: { number: { min: 0.5, max: 2, step: 0.05, mode: "slider" } } },
@@ -44,6 +47,7 @@ const SCHEMA = [
 ];
 
 const LABELS = {
+  image_set: "Picture set",
   name: "Name (shown on the card)",
   layout: "Layout",
   entity: "Sensor",
@@ -66,6 +70,7 @@ const LABELS = {
   show_picture: "Show which picture was chosen and why",
 };
 const HELPERS = {
+  image_set: "Which set of pictures this card draws from. \"The active set\" follows the choice made in the Avatar Weather panel, Settings tab; pick another one to give this card its own character.",
   name: "Shown small at the top of the card, above the clock. Leave empty for none.",
   layout: "Cards = glass panels with icons, like the web page. Classic = plain text on the sky.",
   height: "Height of the card in pixels. Everything inside scales with it.",
@@ -78,7 +83,7 @@ const HELPERS = {
   show_forecast: "Tomorrow's weather (and the next hour, in the cards layout).",
   forecast_entity: "The weather entity the forecast comes from. Leave empty to use the weather source with the most weight.",
   temperature_entity: "Replaces the temperature in this card: the big number AND the outfit of the avatar (cold, chilly, mild, warm, hot). Leave empty to use the average of the weather sources set in the Avatar Weather panel. Handy for a thermometer of your own, such as one on the balcony.",
-  humidity_entity: "Replaces the humidity in this card: the number shown and the choice of the humid pictures (only in warm and hot weather). Leave empty to use the weather sources.",
+  humidity_entity: "Replaces the humidity number shown in this card (it does not change the picture). Leave empty to use the weather sources.",
   avatar_x: "0.5 = centred, 0.74 = on the right like the web page.",
   avatar_size: "Height of the avatar as a fraction of the card.",
   entity: "Only shown in its own panel under the forecast: it does not change the avatar or the temperature above.",
@@ -98,6 +103,7 @@ export function cleanConfig(value, type) {
       return;
     }
     if (k === "sensors") return;
+    if (k === "image_set" && v === ACTIVE) return;
     if (v === undefined || v === null || v === "") return;
     if (k in DEFAULTS && (typeof DEFAULTS[k] === "boolean" ? v === DEFAULTS[k] : typeof DEFAULTS[k] === "number" ? Number(v) === DEFAULTS[k] : v === DEFAULTS[k])) return;   // only what differs from the defaults
     if (v === false && !(k in DEFAULTS)) return;
@@ -114,8 +120,21 @@ class AvatarWeatherCardEditor extends HTMLElement {
   }
 
   set hass(hass) {
+    const first = !this._hass;
     this._hass = hass;
     if (this._form) this._form.hass = hass;
+    if (first) this._loadSets();
+  }
+
+  // The picture sets for the dropdown (administrators only: the editor is for them anyway).
+  async _loadSets() {
+    try {
+      const r = await this._hass.callWS({ type: "avatar_weather_card/sets_list" });
+      this._sets = [{ value: ACTIVE, label: `The active set (${(r.sets.find((x) => x.id === r.active) || {}).name || r.active})` },
+        ...r.sets.filter((x) => x.id !== r.active).map((x) => ({ value: x.id, label: `${x.name} (${x.count} pictures)` })),
+        ...(r.sets.some((x) => x.id === r.active) ? [{ value: r.active, label: `${(r.sets.find((x) => x.id === r.active) || {}).name} (the active one, fixed)` }] : [])];
+      this._render();
+    } catch (err) { /* an older integration without sets: the dropdown keeps its single choice */ }
   }
 
   _render() {
@@ -133,7 +152,12 @@ class AvatarWeatherCardEditor extends HTMLElement {
       this.appendChild(this._form);
     }
     this._form.hass = this._hass;
-    const data = { ...DEFAULTS, ...this._config };
+    if (this._sets) {
+      const cur = this._config.image_set;
+      const opts = this._sets.some((o) => o.value === cur) || !cur ? this._sets : [...this._sets, { value: cur, label: `${cur} (not found)` }];
+      this._form.schema = SCHEMA.map((f) => (f.name === "image_set" ? { name: "image_set", selector: { select: { mode: "dropdown", options: opts } } } : f));
+    }
+    const data = { ...DEFAULTS, image_set: ACTIVE, ...this._config };
     const list = Array.isArray(this._config.sensors) ? this._config.sensors : [];
     [1, 2, 3].forEach((n) => { data[`sensor_${n}`] = list[n - 1] || {}; });
     delete data.sensors;

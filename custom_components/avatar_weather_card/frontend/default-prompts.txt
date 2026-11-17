@@ -1,0 +1,609 @@
+Avatar Weather Card prompts.
+Every picture's prompt = STYLE + CHARACTER + POSE (WEATHER or MUSIC) + the section named after the picture.
+Each section starts with a line "## NAME". Text before the first section (like this) is ignored.
+
+
+## STYLE
+Semi-realistic, digital fashion illustration. Smooth airbrushed shading, soft gradients, crisp clean edges, subtle fabric folds, no visible brush texture, no outline, no sketch lines.
+
+Background: Flat solid grey, exactly #808080, uniform from edge to edge, with nothing else in it: no scenery, no horizon, no sky, no gradient, no vignette, no text, no border, no shadow cast on it. The grey is a chroma key, so nothing on the character, the ground or the armchair may be that same mid grey: anything grey is clearly darker, lighter or tinted. Crisp edge between figure and background, no halo. Clothes and objects have clean saturated colours, never a muted greyish tone (no sage, olive, khaki or taupe). Nothing transparent or see-through in front of the grey: umbrellas, raincoats and bags are opaque and colourful. No falling rain, no falling snow, no fog, no haze anywhere.
+
+No text, numbers or lettering anywhere.
+
+## CHARACTER
+A young woman in her late twenties, shoulder-length dark brown hair, warm medium skin tone, brown eyes, slim build, about 168 cm tall. Friendly, relaxed and confident.
+
+## POSE WEATHER
+The character in full, from the top of the head to below the feet, nothing cropped. 3/4 view, walking calmly, looking ahead, facing left. Portrait format, 3:4. The character is centred with clear empty margin on all four sides and fills about 85% of the image height. Everything held or carried must be entirely inside the frame.
+
+Under the feet, a small low flat ellipse of ground (the scene says what it is), no taller than one step and just wide enough for the stride. The background is visible all around it, on its left, on its right and above it: the ground never reaches the left or right edge of the image. Both feet rest on it, with a soft contact shadow that stays on the ground.
+
+## POSE MUSIC
+She sits relaxed in a plush deep-green corduroy armchair with rounded arms, a thick seat cushion and short dark wooden legs, seen in 3/4 view, facing left, wearing large cream over-ear headphones and listening to music. Square format 1:1. The whole armchair and the whole character are in frame, nothing cropped, centred with clear empty margin on all sides, filling about 85% of the image height.
+
+The armchair stands on nothing: no floor, no rug, no room, no wall, only a soft contact shadow right under its four legs. No music notes or sound waves.
+
+## cold_clear_earlymorning
+Ground: dry warm beige and terracotta stone cobbles. Dawn on a freezing clear morning, she is up early to walk the dog. Comfy clothes: a long black puffer coat zipped up over a cream hoodie, fitted black joggers, a chunky oatmeal knit beanie, clean white low-top leather sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. She is still half asleep: heavy eyelids, faint dark circles under her eyes, a lazy yawn. Hair loose and a little tousled under the beanie. Cold pale dawn light from one side. Her left hand holds the leash. Her right hand is raised to cover her yawn. She holds nothing else.
+
+## cold_cloudy_earlymorning
+Ground: dry warm beige and terracotta stone cobbles. Overcast cold dawn, the first dog walk of the day. Comfy clothes: a long camel teddy-fleece coat over a soft lilac hoodie, black leggings, a cream knit scarf, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy face: half-closed eyes, faint dark circles, a small yawn. Hair pulled into a messy low bun. Soft flat light. Her left hand holds the leash. Her right arm is stretched lazily up above her head. She holds nothing else.
+
+## cold_rain_earlymorning
+Ground: wet glossy blue-slate paving stones. Cold rainy dawn, the dog still needs its walk. A long glossy black hooded rain parka zipped up, slim dark joggers, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, grumpy-cute expression, dark circles, raindrops on her coat. Hair tucked into the hood, a few damp strands on her face. Her right hand holds a bright yellow umbrella over her head. Her left hand holds the leash. She holds nothing else.
+
+## cold_snow_earlymorning
+Ground: fresh white snow. Snowy dawn, the first walk of the day. A long white quilted puffer coat, a chunky cream knit beanie and matching mittens, slim black thermal leggings, shearling-lined low suede loafers in tan. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame, wearing a tiny red knitted dog jumper. Sleepy eyes, rosy cold cheeks, a few snowflakes settled on her beanie and shoulders. Her left mittened hand holds the leash. Her right hand covers a yawn. She holds nothing else.
+
+## chilly_clear_earlymorning
+Ground: dry warm beige and terracotta stone cobbles. Crisp clear dawn, dog walk before work. A cropped black puffer jacket over a cosy denim-blue hoodie, cream joggers, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. She looks sleepy: heavy eyelids, faint dark circles, mid-yawn. Hair in a loose messy ponytail. Cool golden first light from one side. Her left hand holds the leash. Her right arm stretches up over her head. She holds nothing else.
+
+## chilly_cloudy_earlymorning
+Ground: dry warm beige and terracotta stone cobbles. Overcast chilly dawn, dog walk. An oversized olive bomber jacket over a white hoodie, black fitted joggers, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, eyes half shut, faint dark circles. Hair in a messy top knot. Soft flat light. Her left hand holds the leash. Her right hand rubs one eye sleepily. She holds nothing else.
+
+## chilly_rain_earlymorning
+Ground: wet glossy blue-slate paving stones. Chilly rainy dawn, quick dog walk. A short yellow hooded rain jacket, black leggings, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame, its fur slightly damp. Sleepy face, dark circles, a resigned little smile, raindrops on her jacket. Hair under the hood with a few damp strands. Her right hand holds a navy umbrella over her head. Her left hand holds the leash. She holds nothing else.
+
+## mild_clear_earlymorning
+Ground: dry warm beige and terracotta stone cobbles. Mild sunny dawn, dog walk. A oatmeal zip hoodie open over a white crop tank top, black cycling-style leggings, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Still sleepy: heavy eyelids, faint dark circles, a big yawn. Hair in a messy ponytail. Soft golden first light from one side. Her left hand holds the leash. Her right arm stretches up high above her head. She holds nothing else.
+
+## mild_cloudy_earlymorning
+Ground: dry warm beige and terracotta stone cobbles. Mild cloudy dawn, dog walk. An oversized soft pink sweatshirt slipping off one shoulder, oatmeal jogger shorts over black leggings, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, half-closed eyes, faint dark circles. Hair in a loose low bun. Soft even light. Her left hand holds the leash. Her right hand covers a yawn. She holds nothing else.
+
+## mild_rain_earlymorning
+Ground: wet glossy blue-slate paving stones. Mild drizzly dawn, dog walk. A light beige trench-style rain jacket over a oatmeal hoodie, black leggings, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy expression, faint dark circles, damp hair ends. Her right hand holds a cherry-red umbrella over her head. Her left hand holds the leash. She holds nothing else.
+
+## warm_clear_earlymorning
+Ground: dry warm beige and terracotta stone cobbles. Warm sunny dawn, dog walk. A loose white cropped T-shirt, short oatmeal cotton shorts showing her long legs, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy face, heavy eyelids, a lazy yawn. Hair in a high messy ponytail. Warm golden first light. Her left hand holds the leash. Her right arm stretches up above her head. She holds nothing else.
+
+## warm_cloudy_earlymorning
+Ground: dry warm beige and terracotta stone cobbles. Warm cloudy dawn, dog walk. An oversized faded lilac T-shirt knotted at the waist, black biker shorts, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, eyes half shut, faint dark circles. Hair in a messy bun. Soft flat light. Her left hand holds the leash. Her right hand covers a yawn. She holds nothing else.
+
+## warm_rain_earlymorning
+Ground: wet glossy blue-slate paving stones. Warm rainy dawn, dog walk. A thin open cherry-red rain jacket over a white tank top, short black shorts, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy face, damp hair ends, raindrops on her jacket. Her right hand holds a red umbrella over her head. Her left hand holds the leash. She holds nothing else.
+
+## hot_clear_earlymorning
+Ground: dry warm beige and terracotta stone cobbles. Already hot at sunrise, an early dog walk before the heat. A tiny white cotton crop top, very short pale denim cut-off shorts, tan leather gladiator sandals with thin straps up to the ankle bone. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy eyes, faint dark circles, a slow yawn, a light glow on her skin. Hair in a high ponytail. Warm orange sunrise light from one side. Her left hand holds the leash. Her right arm stretches up over her head. She holds nothing else.
+
+## hot_cloudy_earlymorning
+Ground: dry warm beige and terracotta stone cobbles. Hot cloudy dawn, dog walk. A cropped black ribbed tank top, short white cotton shorts, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, heavy eyelids, a small yawn. Hair in a messy high bun. Soft warm flat light. Her left hand holds the leash. Her right hand covers her yawn. She holds nothing else.
+
+## hot_rain_earlymorning
+Ground: wet glossy blue-slate paving stones. Warm summer rain at dawn, dog walk. A thin open lemon-yellow rain cape over a white tank top, short denim shorts, white rubber slide sandals. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, wet shiny legs, damp hair ends. Her right hand holds a cobalt-blue umbrella over her head. Her left hand holds the leash. She holds nothing else.
+
+## cold_clear_morning
+Ground: dry warm beige and terracotta stone cobbles. Bright freezing morning on her way into town. A long black wool coat over a chunky oatmeal turtleneck sweater, slim dark jeans, white low-top leather sneakers, a small black leather bag on her left shoulder, white cat-eye sunglasses. Hair loose over her shoulders. Fresh, awake, confident. Crisp sunlight from one side. Her right hand holds a buttery croissant to her mouth, mid-bite. Her left hand holds the strap of the shoulder bag. She holds nothing else.
+
+## cold_cloudy_morning
+Ground: dry warm beige and terracotta stone cobbles. Overcast cold morning in town. A camel wool wrap coat belted at the waist, a cream turtleneck, black slim trousers, black leather loafers, a cream knit scarf. Hair loose in soft waves. Calm smile. Soft even light. Her right hand holds a takeaway coffee cup with a lid. Her left hand holds a folded newspaper. She holds nothing else.
+
+## cold_rain_morning
+Ground: wet glossy blue-slate paving stones. Cold rainy morning in town. A long black glossy trench coat belted at the waist, a denim-blue turtleneck, slim black trousers, black leather loafers. Hair loose, damp ends. Raindrops on her coat. Her right hand holds a black umbrella over her head. Her left hand holds a takeaway coffee cup with a lid. She holds nothing else.
+
+## cold_snow_morning
+Ground: fresh white snow. Snowy morning in town. A short white quilted puffer jacket, a cream knit roll-neck, slim black trousers, black lug-sole low loafers, a cream knit beanie. Snowflakes settled on her beanie and shoulders, rosy cheeks, a happy look. Her right hand holds a takeaway hot chocolate cup with a lid. Her left hand is tucked into her jacket pocket. She holds nothing else.
+
+## chilly_clear_morning
+Ground: dry warm beige and terracotta stone cobbles. Crisp sunny morning in town. A tan suede biker jacket over a white fitted top, a short black pleated skirt, sheer black tights, white low-top sneakers, tortoiseshell sunglasses. Hair loose and glossy. Bright light from one side. Her right hand holds an iced latte with a straw. A folded newspaper is tucked under her left arm, pressed against her side. She holds nothing else.
+
+## chilly_cloudy_morning
+Ground: dry warm beige and terracotta stone cobbles. Cool cloudy morning in town. A navy pea coat open over a striped Breton top, high-waisted light jeans, white low-top sneakers. Hair in a sleek low ponytail. Soft flat light. Her right hand holds a croissant, mid-bite. Her left hand holds a takeaway coffee cup with a lid. She holds nothing else.
+
+## chilly_rain_morning
+Ground: wet glossy blue-slate paving stones. Chilly rainy morning in town. A short beige trench coat belted at the waist, a black knit mini dress, black opaque tights, black leather loafers. Hair loose, damp ends, raindrops on her coat. Her right hand holds a beige umbrella over her head. Her left hand holds a takeaway coffee cup with a lid. She holds nothing else.
+
+## mild_clear_morning
+Ground: dry warm beige and terracotta stone cobbles. Sunny mild spring morning in town. A cropped white linen blazer over a black lace-trim camisole, a short flowing floral mini skirt, white low-top sneakers, black sunglasses. Hair loose and glossy. Warm light from one side. Her right hand holds a croissant, mid-bite. Her left hand holds an iced coffee with a straw. She holds nothing else.
+
+## mild_cloudy_morning
+Ground: dry warm beige and terracotta stone cobbles. Mild cloudy morning in town. A light denim jacket over a fitted black bodysuit, a cream satin midi slip skirt with a side slit, white low-top sneakers, a small tan bag on her left shoulder. Hair in soft waves. Soft light. Her right hand holds a takeaway coffee cup with a lid. Her left hand holds the strap of the shoulder bag. She holds nothing else.
+
+## mild_rain_morning
+Ground: wet glossy blue-slate paving stones. Mild rainy morning. A light camel trench coat open over a short navy shirt dress, white low-top sneakers. Hair loose, damp ends, raindrops on the coat. Her right hand holds a navy umbrella over her head. Her left hand holds a folded newspaper. She holds nothing else.
+
+## warm_clear_morning
+Ground: dry warm beige and terracotta stone cobbles. Warm sunny morning in town. An off-the-shoulder white cotton top, a short flared white mini skirt, tan flat gladiator sandals, white cat-eye sunglasses. Hair in a glossy high ponytail. Bright warm light from one side. Her right hand holds a croissant to her mouth, mid-bite. Her left hand holds an iced coffee with a straw. She holds nothing else.
+
+## warm_cloudy_morning
+Ground: dry warm beige and terracotta stone cobbles. Warm cloudy morning in town. A fitted cropped mint-green cardigan buttoned over nothing else, high-waisted cream linen shorts, white low-top sneakers. Hair loose in soft waves. Soft light. Her right hand holds a croissant, mid-bite. Her left hand holds a takeaway coffee cup with a lid. She holds nothing else.
+
+## warm_rain_morning
+Ground: wet glossy blue-slate paving stones. Warm rainy morning. A short open lemon-yellow rain jacket over a white tank top, a short denim mini skirt, white low-top sneakers. Shiny wet legs, damp hair ends. Her right hand holds a pastel-pink umbrella over her head. Her left hand holds a takeaway coffee cup with a lid. She holds nothing else.
+
+## hot_clear_morning
+Ground: dry warm beige and terracotta stone cobbles. Hot sunny morning in town. A tiny white eyelet crop top with thin straps, a short flowy pale-blue mini skirt, tan leather gladiator sandals, a wide-brim straw sun hat, black cat-eye sunglasses, golden glowing skin. Hair loose under the hat. Bright hard sunlight from one side. Her right hand holds an iced coffee with a straw. Her left hand holds a croissant. She holds nothing else.
+
+## hot_cloudy_morning
+Ground: dry warm beige and terracotta stone cobbles. Hot cloudy morning in town. A black ribbed crop tank top, a short white denim mini skirt, white low-top sneakers. Hair in a glossy high ponytail. Soft warm light. Her right hand holds a croissant, mid-bite. Her left hand holds an iced coffee with a straw. She holds nothing else.
+
+## hot_rain_morning
+Ground: wet glossy blue-slate paving stones. Warm summer shower in the morning. A thin open white rain cape over a coral bikini-style crop top and short denim shorts, white rubber slide sandals, wet shiny legs, a happy grin. Damp hair ends. Her right hand holds an emerald-green umbrella over her head. Her left hand holds an iced coffee with a straw. She holds nothing else.
+
+## cold_clear_afternoon
+Ground: dry warm beige and terracotta stone cobbles. Sunny freezing afternoon walk in town. A long black puffer coat open over a fitted oatmeal knit sweater dress, black opaque tights, white low-top leather sneakers, a cream knit scarf, black sunglasses. Hair loose and glossy. Low winter sun from one side. Her right hand holds a kraft-paper shopping bag by its handles. Her left hand is tucked into her coat pocket. She holds nothing else.
+
+## cold_cloudy_afternoon
+Ground: dry warm beige and terracotta stone cobbles. Overcast cold afternoon walk. A jet-black wool coat with a wide collar, a burgundy turtleneck, slim black leather trousers, black leather loafers. Hair in a sleek low ponytail. Soft light. Her right hand holds one single small white boutique shopping bag by its handles; it is the only bag in the picture. Her left hand hangs relaxed at her side, empty.
+
+## cold_rain_afternoon
+Ground: wet glossy blue-slate paving stones. Cold rainy afternoon in town. A long navy rain trench coat belted tight, a cream roll-neck, slim black trousers, black leather loafers. Damp hair ends, raindrops on the coat. Her right hand holds a navy umbrella over her head. Her left hand holds a small kraft-paper shopping bag. She holds nothing else.
+
+## cold_snow_afternoon
+Ground: fresh white snow. Snowy afternoon stroll. A long belted ivory wool coat, a deep-red knit scarf and matching beanie, slim black trousers, black lug-sole low loafers. Snowflakes settled on her beanie and shoulders, pink cheeks, a delighted smile. Her right hand is held out palm up, catching snowflakes. Her left hand is tucked into her coat pocket. She holds nothing else.
+
+## chilly_clear_afternoon
+Ground: dry warm beige and terracotta stone cobbles. Crisp sunny afternoon walk. A black leather biker jacket over a cream ribbed knit mini dress, sheer black tights, white low-top sneakers, gold hoop earrings, tortoiseshell sunglasses. Hair loose. Low golden sun from one side. Her right hand holds a kraft-paper shopping bag. Her left hand hangs relaxed at her side, empty.
+
+## chilly_cloudy_afternoon
+Ground: dry warm beige and terracotta stone cobbles. Cool cloudy afternoon walk. A camel trench coat worn open over a fitted black turtleneck and a short tan suede mini skirt, sheer black tights, black leather loafers. Hair in soft waves. Soft light. Her right hand holds a takeaway tea cup with a lid. Her left hand holds one single small white boutique shopping bag by its handles; it is the only bag in the picture. She holds nothing else.
+
+## chilly_rain_afternoon
+Ground: wet glossy blue-slate paving stones. Chilly rainy afternoon. A short glossy black rain jacket over a oatmeal knit sweater dress, black opaque tights, black leather loafers. Damp hair ends, raindrops on her jacket. Her right hand holds a cobalt-blue umbrella over her head. Her left hand holds a small kraft-paper shopping bag. She holds nothing else.
+
+## mild_clear_afternoon
+Ground: dry warm beige and terracotta stone cobbles. Sunny mild afternoon walk. A fitted white button shirt tucked into a short high-waisted beige linen mini skirt, a thin tan belt, white low-top sneakers, black sunglasses, small gold earrings. Hair loose and glossy. Warm light from one side. Her right hand holds a kraft-paper shopping bag. Her left hand hangs relaxed at her side, empty.
+
+## mild_cloudy_afternoon
+Ground: dry warm beige and terracotta stone cobbles. Mild cloudy afternoon walk. A bright forest-green utility jacket over a black slip mini dress, white low-top sneakers, a small black crossbody bag. Hair in a loose braid over one shoulder. Soft light. Her right hand holds an iced latte with a straw. Her left hand hangs relaxed at her side, empty.
+
+## mild_rain_afternoon
+Ground: wet glossy blue-slate paving stones. Mild rainy afternoon. A pale-blue rain mac belted at the waist over a short white shirt dress, white low-top sneakers. Damp hair ends, raindrops on the mac. Her right hand holds a pale-blue umbrella over her head. Her left hand holds one single small white boutique shopping bag by its handles; it is the only bag in the picture. She holds nothing else.
+
+## warm_clear_afternoon
+Ground: dry warm beige and terracotta stone cobbles. Warm sunny afternoon walk. A white fitted crop T-shirt, a short high-waisted denim mini skirt, white low-top sneakers, black cat-eye sunglasses, a thin gold necklace. Hair loose and glossy. Bright warm light from one side. Her right hand holds a kraft-paper shopping bag. Her left hand holds an iced coffee with a straw. She holds nothing else.
+
+## warm_cloudy_afternoon
+Ground: dry warm beige and terracotta stone cobbles. Warm cloudy afternoon walk. A cropped pale-pink cardigan over a white lace camisole, short white linen shorts, white low-top sneakers. Hair in soft loose waves. Soft light. Her right hand holds one single small white boutique shopping bag by its handles; it is the only bag in the picture. Her left hand hangs relaxed at her side, empty.
+
+## warm_rain_afternoon
+Ground: wet glossy blue-slate paving stones. Warm rainy afternoon. A short open cherry-red rain jacket over a white ribbed tank dress, white low-top sneakers. Shiny wet legs, damp hair ends. Her right hand holds a red umbrella over her head. Her left hand holds a small kraft-paper shopping bag. She holds nothing else.
+
+## hot_clear_afternoon
+Ground: dry warm beige and terracotta stone cobbles. Hot sunny afternoon walk. A tiny white linen bandeau top, a short floaty white wrap mini skirt, tan leather gladiator sandals laced to just below the ankle bone, a wide-brim straw sun hat, black sunglasses, gold glowing skin. Hair loose under the hat. Hard bright sunlight from one side. Her right hand holds a kraft-paper shopping bag. Her left hand holds an iced coffee with a straw. She holds nothing else.
+
+## hot_cloudy_afternoon
+Ground: dry warm beige and terracotta stone cobbles. Hot cloudy afternoon walk. A black ribbed crop tank top, short pale denim cut-off shorts, white low-top sneakers, a thin gold anklet. Hair in a glossy high ponytail. Soft warm light. Her right hand holds a kraft-paper shopping bag. Her left hand hangs relaxed at her side, empty.
+
+## hot_rain_afternoon
+Ground: wet glossy blue-slate paving stones. Warm summer downpour in the afternoon. A thin open glossy cherry-red raincoat over a black crop tank top and short white shorts, white rubber slide sandals, wet shiny legs, laughing. Damp hair ends. Her right hand holds a pastel-pink umbrella over her head. Her left hand holds one single small white boutique shopping bag by its handles; it is the only bag in the picture. She holds nothing else.
+
+## cold_clear_evening
+Ground: ochre cobbles lit warm by a street lamp. Freezing clear evening, going out. A black velvet long-sleeve mini dress under a long camel wool coat worn open, sheer black tights, black suede over-the-knee boots with a slim high stiletto heel, diamond drop earrings, red lips. Hair in glossy loose waves. Warm street-lamp light from one side, deep shadow on the other. Her right hand holds a small black satin clutch. Her left hand holds the edge of her coat closed at her waist. She holds nothing else.
+
+## cold_cloudy_evening
+Ground: ochre cobbles lit warm by a street lamp. Cold cloudy evening, going out. An emerald satin mini dress under a short white faux-fur jacket, sheer black tights, black leather over-the-knee boots with a slim high stiletto heel, gold drop earrings. Hair in glossy waves. Warm lamp light. Her right hand holds a small gold chain-strap clutch. Her left hand hangs relaxed at her side, empty.
+
+## cold_rain_evening
+Ground: wet glossy blue-slate paving stones. Cold rainy evening, going out. A black satin mini slip dress under a long black patent trench coat worn open, sheer black tights, black patent over-the-knee boots with a slim high stiletto heel, silver drop earrings. Damp hair ends, raindrops on the coat. Warm lamp light reflected on the wet stones. Her right hand holds a black umbrella over her head. Her left hand holds a small black clutch. She holds nothing else.
+
+## cold_snow_evening
+Ground: fresh white snow. Snowy evening, going out. A deep-green satin mini dress under a short white faux-fur coat, sheer black tights, black leather over-the-knee boots with a slim high stiletto heel, diamond studs. A few snowflakes in her glossy waves. Warm lamp light. Her right hand holds a small black clutch. Her left hand holds the faux-fur collar closed at her throat. She holds nothing else.
+
+## chilly_clear_evening
+Ground: ochre cobbles lit warm by a street lamp. Chilly clear evening, going out. A little black dress with thin straps under a cropped black leather jacket, sheer black tights, black pointed stiletto pumps, long gold drop earrings, red lips. Hair in glossy waves. Warm lamp light. Her right hand holds a small red clutch. Her left hand hangs relaxed at her side, empty.
+
+## chilly_cloudy_evening
+Ground: ochre cobbles lit warm by a street lamp. Chilly cloudy evening, going out. A burgundy velvet wrap mini dress, a camel coat draped over her shoulders, sheer black tights, black suede over-the-knee boots with a high stiletto heel, pearl earrings. Hair in a sleek low bun. Warm lamp light. Her right hand holds a small black clutch. Her left hand holds the coat lapel at her chest. She holds nothing else.
+
+## chilly_rain_evening
+Ground: wet glossy blue-slate paving stones. Chilly rainy evening, going out. A burgundy velvet mini dress under a camel wool coat worn open, sheer black tights, black suede over-the-knee boots with a slim high stiletto heel, a pearl pendant and pearl studs. Damp hair ends, raindrops on the coat. Warm lamp light on the wet stones. Her right hand holds a black umbrella over her head. Her left hand holds a small black satin clutch. She holds nothing else.
+
+## mild_clear_evening
+Ground: ochre cobbles lit warm by a street lamp. Mild clear evening, going out. A red satin slip mini dress with thin straps and a cowl neckline, a light black blazer over her shoulders, nude stiletto sandals, gold hoop earrings, a fine gold bracelet. Hair in glossy loose waves. Warm lamp light. Her right hand holds a small gold clutch. Her left hand hangs relaxed at her side, empty.
+
+## mild_cloudy_evening
+Ground: ochre cobbles lit warm by a street lamp. Mild cloudy evening, going out. A navy one-shoulder bodycon mini dress, black strappy stiletto sandals, long silver drop earrings. Hair in a sleek high ponytail. Warm lamp light. Her right hand holds a small rose-gold clutch. Her left hand hangs relaxed at her side, empty.
+
+## mild_rain_evening
+Ground: wet glossy blue-slate paving stones. Mild rainy evening, going out. A black lace-trim satin mini dress under a short beige trench coat worn open, black patent stiletto pumps, pearl drop earrings. Damp hair ends, raindrops on the coat. Warm lamp light on the wet stones. Her right hand holds a beige umbrella over her head. Her left hand holds a small black clutch. She holds nothing else.
+
+## warm_clear_evening
+Ground: ochre cobbles lit warm by a street lamp. Warm clear evening, going out. A red satin slip mini dress with thin straps, black strappy stiletto sandals, gold drop earrings, a thin gold anklet. Hair in glossy loose waves. Warm lamp light. Her right hand holds a small black clutch. Her left hand hangs relaxed at her side, empty.
+
+## warm_cloudy_evening
+Ground: ochre cobbles lit warm by a street lamp. Warm cloudy evening, going out. A mint-green satin wrap mini dress, nude stiletto sandals, small diamond studs and a fine tennis bracelet. Hair in soft glossy waves. Warm lamp light. Her right hand holds a small cream clutch. Her left hand hangs relaxed at her side, empty.
+
+## warm_rain_evening
+Ground: wet glossy blue-slate paving stones. Warm rainy evening, going out. A cobalt-blue satin mini dress, black patent stiletto sandals, silver drop earrings, wet shiny legs, damp hair ends. Warm lamp light on the wet stones. Her right hand holds a black umbrella over her head. Her left hand holds a small rose-gold clutch. She holds nothing else.
+
+## hot_clear_evening
+Ground: ochre cobbles lit warm by a street lamp. Hot summer evening, going out. A strapless coral bodycon mini dress, gold strappy stiletto sandals, delicate gold hoops and a thin gold chain necklace, sun-kissed glowing skin. Hair in glossy loose waves. Warm lamp light. Her right hand holds a small gold clutch. Her left hand hangs relaxed at her side, empty.
+
+## hot_cloudy_evening
+Ground: ochre cobbles lit warm by a street lamp. Hot cloudy evening, going out. A black halter-neck mini dress with an open back, black strappy stiletto sandals, long gold earrings. Hair in a sleek high ponytail. Warm lamp light. Her right hand holds a small black clutch. Her left hand hangs relaxed at her side, empty.
+
+## hot_rain_evening
+Ground: wet glossy blue-slate paving stones. Warm summer rain in the evening, going out. A short emerald satin slip dress, gold strappy stiletto sandals, gold hoops, wet shiny legs, damp hair ends, a playful smile. Warm lamp light on the wet stones. Her right hand holds an emerald-green umbrella over her head. Her left hand holds a small gold clutch. She holds nothing else.
+
+## cold_clear_night
+Ground: ochre cobbles lit warm by a street lamp. Late on a freezing clear night, coming home after the evening out, sleepy and happy: a soft tired smile, heavy eyelids. A black velvet mini dress under a long camel coat worn open, sheer black tights, black suede over-the-knee boots with a slim high stiletto heel, diamond drop earrings. Hair in slightly undone waves. Cool moonlight with a warm lamp glow from one side. Her right hand holds a small black clutch. Her left hand holds the coat closed at her chest. She holds nothing else.
+
+## cold_rain_night
+Ground: wet glossy blue-slate paving stones. Late on a cold rainy night, coming home, tired but happy. A black satin mini dress under a long black trench coat worn open, sheer black tights, black patent over-the-knee boots with a slim high stiletto heel, silver earrings. Damp hair, a sleepy smile. Lamp light on the wet stones. Her right hand holds a black umbrella over her head. Her left hand holds a small black clutch. She holds nothing else.
+
+## cold_snow_night
+Ground: fresh white snow. Late on a snowy night, coming home, sleepy and content. A deep-red velvet mini dress under a long black wool coat worn open, sheer black tights, black leather over-the-knee boots with a slim high stiletto heel, diamond studs. Snowflakes in her hair, heavy eyelids, a soft smile. Cool night light. Her right hand holds a small red clutch. Her left hand is tucked into her coat pocket. She holds nothing else.
+
+## chilly_clear_night
+Ground: ochre cobbles lit warm by a street lamp. Late on a chilly clear night, coming home, tired but happy. A little black dress under a cropped black leather jacket, sheer black tights, black pointed stiletto pumps, gold drop earrings. Slightly undone waves, a sleepy smile. Moonlight and a warm lamp glow. Her right hand holds a small red clutch. Her left hand hangs relaxed at her side, empty.
+
+## chilly_rain_night
+Ground: wet glossy blue-slate paving stones. Late on a chilly rainy night, coming home, sleepy and smiling. A burgundy velvet mini dress under a camel coat worn open, sheer black tights, black suede over-the-knee boots with a slim high stiletto heel, pearl studs. Damp hair. Lamp light on the wet stones. Her right hand holds a black umbrella over her head. Her left hand holds a small black clutch. She holds nothing else.
+
+## mild_clear_night
+Ground: ochre cobbles lit warm by a street lamp. Late on a mild clear night, coming home, sleepy and happy. A red satin slip mini dress, a black blazer over her shoulders, nude stiletto sandals, gold hoops. Undone waves, heavy eyelids, a dreamy smile. Moonlight and a warm lamp glow. Her right hand holds a small gold clutch. Her left hand holds the blazer lapel at her chest. She holds nothing else.
+
+## mild_rain_night
+Ground: wet glossy blue-slate paving stones. Late on a mild rainy night, coming home, tired but happy. A black lace-trim satin mini dress under a short beige trench coat worn open, black patent stiletto pumps, pearl earrings. Damp hair. Lamp light on the wet stones. Her right hand holds a beige umbrella over her head. Her left hand holds a small black clutch. She holds nothing else.
+
+## warm_clear_night
+Ground: ochre cobbles lit warm by a street lamp. Late on a warm clear night, coming home, sleepy and happy. A sequinned rose-gold slip mini dress, rose-gold strappy stiletto sandals, diamond studs. Undone glossy waves, heavy eyelids, a soft smile. Moonlight and a warm lamp glow. Her right hand holds a small rose-gold clutch. Her left hand hangs relaxed at her side, empty.
+
+## warm_rain_night
+Ground: wet glossy blue-slate paving stones. Late on a warm rainy night, coming home, tired but happy. A cobalt satin mini dress, black patent stiletto sandals, silver earrings, wet shiny legs, damp hair. Lamp light on the wet stones. Her right hand holds a black umbrella over her head. Her left hand holds a small rose-gold clutch. She holds nothing else.
+
+## hot_clear_night
+Ground: ochre cobbles lit warm by a street lamp. Late on a hot summer night, coming home, sleepy and happy. A strapless coral bodycon mini dress, gold strappy stiletto sandals, gold hoops, sun-kissed skin. Undone waves, heavy eyelids, a dreamy smile. Moonlight and a warm lamp glow. Her right hand holds a small gold clutch. Her left hand hangs relaxed at her side, empty.
+
+## hot_rain_night
+Ground: wet glossy blue-slate paving stones. Late on a warm rainy summer night, coming home, tired and laughing. A short emerald satin slip dress, gold strappy stiletto sandals, gold hoops, wet shiny legs, damp hair. Lamp light on the wet stones. Her right hand holds a bright yellow umbrella over her head. Her left hand holds a small gold clutch. She holds nothing else.
+
+## cold_clear_earlymorning_weekend
+Ground: dry warm beige and terracotta stone cobbles. Saturday dawn, freezing and clear, a slow weekend dog walk. A long cream teddy-fleece coat over soft sky-blue loungewear joggers and hoodie, a chunky knit beanie, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy but relaxed, faint dark circles, a lazy contented smile. Hair loose under the beanie. Pale dawn light. Her left hand holds the leash. Her right hand holds a steaming takeaway coffee cup with a lid. She holds nothing else.
+
+## cold_cloudy_earlymorning_weekend
+Ground: dry warm beige and terracotta stone cobbles. Overcast Saturday dawn, a slow dog walk. A long black puffer coat over pale-pink loungewear, a cream scarf, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, heavy eyelids, a big yawn. Hair in a messy bun. Soft flat light. Her left hand holds the leash. Her right hand covers her yawn. She holds nothing else.
+
+## cold_rain_earlymorning_weekend
+Ground: wet glossy blue-slate paving stones. Rainy cold Saturday dawn, a short dog walk. A long forest-green hooded rain parka, black leggings, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, dark circles, raindrops on her parka. Hair tucked in the hood. Her right hand holds a bright yellow umbrella over her head. Her left hand holds the leash. She holds nothing else.
+
+## cold_snow_earlymorning_weekend
+Ground: fresh white snow. Snowy Saturday dawn, a slow dog walk before skiing. A short red puffer jacket, black thermal leggings, a white knit beanie with a pompom, shearling-lined tan low loafers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame, in a tiny knitted jumper. Sleepy but excited, rosy cheeks, snowflakes on her beanie. Her left hand holds the leash. Her right hand holds a takeaway hot chocolate with a lid. She holds nothing else.
+
+## chilly_clear_earlymorning_weekend
+Ground: dry warm beige and terracotta stone cobbles. Crisp clear Saturday dawn, an unhurried dog walk. A cropped cream puffer jacket over a oatmeal hoodie, black leggings, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, half-closed eyes, a little smile. Hair in a messy ponytail. Golden first light. Her left hand holds the leash. Her right hand holds a takeaway coffee cup with a lid. She holds nothing else.
+
+## chilly_cloudy_earlymorning_weekend
+Ground: dry warm beige and terracotta stone cobbles. Cloudy chilly Saturday dawn, dog walk. An oversized cream cardigan coat over soft navy loungewear, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, mid-yawn. Hair in a messy bun. Soft light. Her left hand holds the leash. Her right arm stretches up above her head. She holds nothing else.
+
+## chilly_rain_earlymorning_weekend
+Ground: wet glossy blue-slate paving stones. Chilly rainy Saturday dawn, dog walk. A short yellow hooded rain jacket, oatmeal joggers, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, dark circles, damp hair ends. Her right hand holds a navy umbrella over her head. Her left hand holds the leash. She holds nothing else.
+
+## mild_clear_earlymorning_weekend
+Ground: dry warm beige and terracotta stone cobbles. Sunny mild Saturday dawn, slow dog walk. An oversized white shirt worn open over a oatmeal sports bra top, black leggings, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, lazy smile. Hair loose and tousled. Golden first light. Her left hand holds the leash. Her right hand holds a takeaway coffee cup with a lid. She holds nothing else.
+
+## mild_cloudy_earlymorning_weekend
+Ground: dry warm beige and terracotta stone cobbles. Mild cloudy Saturday dawn, dog walk. A soft lilac hoodie and matching jogger shorts, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, faint dark circles, a yawn. Hair in a high messy bun. Soft light. Her left hand holds the leash. Her right hand covers her yawn. She holds nothing else.
+
+## mild_rain_earlymorning_weekend
+Ground: wet glossy blue-slate paving stones. Mild drizzly Saturday dawn, dog walk. A light beige rain jacket, black leggings, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, damp hair ends. Her right hand holds a cherry-red umbrella over her head. Her left hand holds the leash. She holds nothing else.
+
+## warm_clear_earlymorning_weekend
+Ground: pale golden beach sand with a couple of tiny shells. Sunny warm Saturday dawn at the seaside, an early dog walk along the beach. A loose white linen shirt worn open over a black bikini, short white linen shorts, flat tan slide sandals. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy and relaxed, a soft smile. Hair in a loose messy ponytail. Golden sunrise light. Her left hand holds the leash. Her right hand holds a takeaway coffee cup with a lid. She holds nothing else.
+
+## warm_cloudy_earlymorning_weekend
+Ground: pale golden beach sand with a couple of tiny shells. Warm cloudy Saturday dawn at the seaside, dog walk on the beach. An oversized cream sweatshirt over a coral bikini bottom, barefoot. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, faint dark circles, a yawn. Hair in a messy bun. Soft light. Her left hand holds the leash. Her right hand covers her yawn. She holds nothing else.
+
+## warm_rain_earlymorning_weekend
+Ground: wet glossy blue-slate paving stones. Warm rainy Saturday dawn, dog walk. A thin cherry-red rain jacket open over a white tank top, short black shorts, white low-top sneakers. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, wet shiny legs, damp hair ends. Her right hand holds a red umbrella over her head. Her left hand holds the leash. She holds nothing else.
+
+## hot_clear_earlymorning_weekend
+Ground: pale golden beach sand with a couple of tiny shells. Hot sunny Saturday sunrise at the seaside, dog walk on the beach before the heat. A white crochet cover-up mini dress over a red bikini, barefoot, a thin gold anklet. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy but happy, glowing skin. Hair loose and salty. Warm orange sunrise light. Her left hand holds the leash. Her right hand holds an iced coffee with a straw. She holds nothing else.
+
+## hot_cloudy_earlymorning_weekend
+Ground: pale golden beach sand with a couple of tiny shells. Hot cloudy Saturday dawn at the seaside, dog walk on the beach. A black bikini under short white linen shorts and an open white linen shirt, barefoot. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, mid-yawn. Hair in a messy high ponytail. Soft warm light. Her left hand holds the leash. Her right hand covers her yawn. She holds nothing else.
+
+## hot_rain_earlymorning_weekend
+Ground: wet glossy blue-slate paving stones. Warm summer rain at Saturday dawn, dog walk. A thin open lemon-yellow rain cape over a white tank top and short denim shorts, white rubber slides. Her little dog, a small fluffy apricot toy poodle, trots ahead of her on a thin tan leather leash, fully inside the frame. Sleepy, wet shiny legs. Her right hand holds a cobalt-blue umbrella over her head. Her left hand holds the leash. She holds nothing else.
+
+## cold_clear_morning_weekend
+Ground: rocky mountain path with a few tufts of green alpine grass. Saturday mountain hike on a freezing sunny morning. A fitted cream fleece zip top under an open short red puffer vest, slim black hiking leggings, low teal trail-running shoes, a black knit headband, mirrored sport sunglasses, a small black backpack on both shoulders. Pink cheeks, a bright smile. Hair in a long braid. Crisp sunlight. Her right hand holds a single trekking pole. Her left hand holds the backpack shoulder strap. She holds nothing else.
+
+## cold_cloudy_morning_weekend
+Ground: rocky mountain path with a few tufts of green alpine grass. Saturday mountain hike on a cold cloudy morning. A fitted forest-green softshell jacket, slim black hiking leggings, low brown trail-running shoes, a cream knit beanie, a small forest-green backpack on both shoulders. Hair in a low braid. Soft light. Her right hand holds a single trekking pole. Her left hand holds a metal water bottle. She holds nothing else.
+
+## cold_rain_morning_weekend
+Ground: wet glossy blue-slate paving stones. Rainy cold Saturday morning, shopping in town. A long belted black trench coat, a cream cashmere turtleneck, slim tan trousers, black leather loafers, gold earrings. Damp hair ends, raindrops on the coat. Her right hand holds a black umbrella over her head. One large glossy white shopping tote hangs from her left shoulder by its long handles, and her left hand rests on the handles at her shoulder. That tote is the only bag: no bag in her hands. She holds nothing else.
+
+## cold_snow_morning_weekend
+Ground: fresh white snow. Saturday on the ski slopes, sunny snowy morning. A fitted white ski jacket, slim black ski trousers, black ski boots, a white helmet with ski goggles pushed up on it. She stands on a pair of red skis, gliding forward, knees softly bent, a big smile. Hair in a low braid. Bright snow light. Her right hand holds one ski pole. Her left hand holds the other ski pole. She holds nothing else, and there are no other skis anywhere.
+
+## chilly_clear_morning_weekend
+Ground: rocky mountain path with a few tufts of green alpine grass. Saturday mountain hike on a crisp sunny morning. A cropped lilac fleece zip top, slim black hiking leggings, low teal trail-running shoes, sport sunglasses, a small teal backpack on both shoulders. Hair in a high ponytail. Bright light. Her right hand holds a single trekking pole. Her left hand holds the backpack shoulder strap. She holds nothing else.
+
+## chilly_cloudy_morning_weekend
+Ground: rocky mountain path with a few tufts of green alpine grass. Saturday mountain hike on a cool cloudy morning. A fitted mustard softshell jacket, slim black hiking leggings, low trail-running shoes, a small black backpack. Hair in a long braid. Soft light. Her right hand holds a single trekking pole. Her left hand holds a metal water bottle. She holds nothing else.
+
+## chilly_rain_morning_weekend
+Ground: wet glossy blue-slate paving stones. Chilly rainy Saturday morning, shopping in town. A short camel trench coat belted over a black knit mini dress, black opaque tights, black leather loafers. Damp hair ends. Her right hand holds a camel umbrella over her head. One large glossy black shopping tote hangs from her left shoulder by its long handles, and her left hand rests on the handles at her shoulder. That tote is the only bag: no bag in her hands. She holds nothing else.
+
+## mild_clear_morning_weekend
+Ground: rocky mountain path with a few tufts of green alpine grass. Saturday mountain hike on a sunny mild morning. A fitted white sports tank top, a oatmeal zip fleece tied around her waist, black hiking shorts, low teal trail-running shoes, sport sunglasses, a small black backpack. Glowing skin. Hair in a high ponytail. Bright light. Her right hand holds a single trekking pole. Her left hand holds a metal water bottle. She holds nothing else.
+
+## mild_cloudy_morning_weekend
+Ground: rocky mountain path with a few tufts of green alpine grass. Saturday mountain hike on a mild cloudy morning. A cropped mint-green fleece, black hiking leggings, low trail-running shoes, a small forest-green backpack. Hair in a braid. Soft light. Her right hand holds a single trekking pole. Her left hand holds the backpack shoulder strap. She holds nothing else.
+
+## mild_rain_morning_weekend
+Ground: wet glossy blue-slate paving stones. Mild rainy Saturday morning, shopping in town. A pale-blue rain mac open over a white shirt dress, white low-top sneakers. Damp hair ends. Her right hand holds a pale-blue umbrella over her head. One large glossy white shopping tote hangs from her left shoulder by its long handles, and her left hand rests on the handles at her shoulder. That tote is the only bag: no bag in her hands. She holds nothing else.
+
+## warm_clear_morning_weekend
+Ground: pale golden beach sand with a couple of tiny shells. Saturday at the sea, sunny warm morning, walking to the shoreline. A black string bikini under an open white sheer beach shirt, flat tan slide sandals, a wide-brim straw hat, black sunglasses, a straw beach tote on her left shoulder. Golden skin. Hair loose under the hat. Bright light. Her right hand holds an iced coffee with a straw. Her left hand holds the strap of the tote. She holds nothing else.
+
+## warm_cloudy_morning_weekend
+Ground: pale golden beach sand with a couple of tiny shells. Saturday at the sea, warm cloudy morning. A coral bikini under short white denim shorts worn open at the top button, barefoot. Hair in a high ponytail. Soft light. Her right hand holds a rolled striped beach towel. Her left hand hangs relaxed at her side, empty.
+
+## warm_rain_morning_weekend
+Ground: wet glossy blue-slate paving stones. Warm rainy Saturday morning, shopping in town. A short open cherry-red rain jacket over a white slip mini dress, white low-top sneakers. Wet shiny legs, damp hair ends. Her right hand holds a red umbrella over her head. One large glossy white shopping tote hangs from her left shoulder by its long handles, and her left hand rests on the handles at her shoulder. That tote is the only bag: no bag in her hands. She holds nothing else.
+
+## hot_clear_morning_weekend
+Ground: pale golden beach sand with a couple of tiny shells. Saturday at the sea, hot sunny morning, walking to the shoreline. A red triangle bikini, a sheer white kaftan worn open, flat gold slide sandals, a wide-brim straw hat, black sunglasses, a straw beach tote on her left shoulder. Golden glowing skin. Hair loose under the hat. Hard bright sunlight. Her right hand holds an iced coffee with a straw. Her left hand holds the strap of the tote. She holds nothing else.
+
+## hot_cloudy_morning_weekend
+Ground: pale golden beach sand with a couple of tiny shells. Saturday at the sea, hot cloudy morning. A navy bikini, a short white sarong knotted at the hip, barefoot. Hair in a glossy high ponytail. Soft warm light. Her right hand holds a rolled striped beach towel. Her left hand holds an iced coffee with a straw. She holds nothing else.
+
+## hot_rain_morning_weekend
+Ground: wet glossy blue-slate paving stones. Warm summer rain on a Saturday morning, shopping in town. A short yellow rain jacket open over a black crop tank top and a white mini skirt, white rubber slides. Wet shiny legs. Her right hand holds a pastel-pink umbrella over her head. One large glossy black shopping tote hangs from her left shoulder by its long handles, and her left hand rests on the handles at her shoulder. That tote is the only bag: no bag in her hands. She holds nothing else.
+
+## cold_clear_afternoon_weekend
+Ground: rocky mountain path with a few tufts of green alpine grass. Saturday mountain hike, freezing sunny afternoon, on the way down. A fitted cream fleece zip top under an open short red puffer vest, slim black hiking leggings, low teal trail-running shoes, sport sunglasses pushed up in her hair, a small black backpack. Happy and tired, pink cheeks. Hair in a long braid. Low golden sun. Her right hand holds a single trekking pole. Her left hand holds a small thermos cup of hot tea. She holds nothing else.
+
+## cold_cloudy_afternoon_weekend
+Ground: rocky mountain path with a few tufts of green alpine grass. Saturday mountain hike, cold cloudy afternoon. A fitted burgundy softshell jacket, slim black hiking leggings, low trail-running shoes, a cream knit beanie, a small forest-green backpack. Hair in a low braid. Soft light. Her right hand holds a single trekking pole. Her left hand holds a granola bar. She holds nothing else.
+
+## cold_rain_afternoon_weekend
+Ground: wet glossy blue-slate paving stones. Cold rainy Saturday afternoon, shopping in town. A long navy wool coat, a oatmeal cashmere sweater, slim black trousers, black leather loafers, small pearl studs. Damp hair ends. Her right hand holds a navy umbrella over her head. One large glossy red shopping tote hangs from her left shoulder by its long handles, and her left hand rests on the handles at her shoulder. That tote is the only bag: no bag in her hands. She holds nothing else.
+
+## cold_snow_afternoon_weekend
+Ground: fresh white snow. Saturday at the ski resort, snowy afternoon, après-ski stroll through the village after a day on the slopes. A fitted white ski jacket worn open over a cream ribbed turtleneck, slim black stretch ski trousers, shearling-lined low tan suede loafers, a white knit beanie. Rosy cheeks, a tired happy smile, snowflakes on her beanie. Hair in a low braid. No skis, no ski poles, no ski boots anywhere in the picture. Her right hand holds a takeaway cup of hot chocolate with a lid. Her left hand holds a pair of ski goggles by their strap. She holds nothing else.
+
+## chilly_clear_afternoon_weekend
+Ground: rocky mountain path with a few tufts of green alpine grass. Saturday mountain hike, crisp sunny afternoon. A cropped lilac fleece, slim black hiking leggings, low teal trail-running shoes, sport sunglasses, a small teal backpack. Happy, a little tired. Hair in a high ponytail. Low golden sun. Her right hand holds a single trekking pole. Her left hand holds a red apple. She holds nothing else.
+
+## chilly_cloudy_afternoon_weekend
+Ground: rocky mountain path with a few tufts of green alpine grass. Saturday mountain hike, cool cloudy afternoon. A fitted mustard softshell jacket, slim black hiking leggings, low trail-running shoes, a small black backpack. Hair in a long braid. Soft light. Her right hand holds a single trekking pole. Her left hand holds the backpack shoulder strap. She holds nothing else.
+
+## chilly_rain_afternoon_weekend
+Ground: wet glossy blue-slate paving stones. Chilly rainy Saturday afternoon, shopping in town. A short black rain trench over a oatmeal knit mini dress, black opaque tights, black leather loafers. Damp hair ends. Her right hand holds a black umbrella over her head. One large glossy pink shopping tote hangs from her left shoulder by its long handles, and her left hand rests on the handles at her shoulder. That tote is the only bag: no bag in her hands. She holds nothing else.
+
+## mild_clear_afternoon_weekend
+Ground: rocky mountain path with a few tufts of green alpine grass. Saturday mountain hike, sunny mild afternoon. A fitted white sports tank top, black hiking shorts, low teal trail-running shoes, sport sunglasses, a small black backpack. Glowing skin, happy and a little tired. Hair in a high ponytail. Warm light. Her right hand holds a single trekking pole. Her left hand holds a metal water bottle. She holds nothing else.
+
+## mild_cloudy_afternoon_weekend
+Ground: rocky mountain path with a few tufts of green alpine grass. Saturday mountain hike, mild cloudy afternoon. A cropped mint-green fleece, black hiking leggings, low trail-running shoes, a small forest-green backpack. Hair in a braid. Soft light. Her right hand holds a single trekking pole. Her left hand holds a small bunch of wild flowers. She holds nothing else.
+
+## mild_rain_afternoon_weekend
+Ground: wet glossy blue-slate paving stones. Mild rainy Saturday afternoon, shopping in town. A short beige trench coat open over a navy mini dress, white low-top sneakers. Damp hair ends. Her right hand holds a beige umbrella over her head. One large glossy white shopping tote hangs from her left shoulder by its long handles, and her left hand rests on the handles at her shoulder. That tote is the only bag: no bag in her hands. She holds nothing else.
+
+## warm_clear_afternoon_weekend
+Ground: pale golden beach sand with a couple of tiny shells. Saturday at the sea, sunny warm afternoon, walking along the shoreline. A black bikini, a short sheer black sarong knotted at the hip, barefoot, a wide-brim straw hat, black sunglasses. Golden skin. Hair loose under the hat. Bright light. Her right hand holds a sandwich wrapped in paper, taking a bite. Her left hand hangs relaxed at her side, empty.
+
+## warm_cloudy_afternoon_weekend
+Ground: pale golden beach sand with a couple of tiny shells. Saturday at the sea, warm cloudy afternoon, at the shoreline. A coral bikini, a short white sarong, barefoot. Hair in a loose high ponytail. Soft light. Her right hand holds a sandwich wrapped in paper. Her left hand hangs relaxed at her side, empty.
+
+## warm_rain_afternoon_weekend
+Ground: wet glossy blue-slate paving stones. Warm rainy Saturday afternoon, shopping in town. A short open cherry-red rain jacket over a white ribbed tank dress, white low-top sneakers. Wet shiny legs. Her right hand holds a red umbrella over her head. One large glossy black shopping tote hangs from her left shoulder by its long handles, and her left hand rests on the handles at her shoulder. That tote is the only bag: no bag in her hands. She holds nothing else.
+
+## hot_clear_afternoon_weekend
+Ground: pale golden beach sand with a couple of tiny shells. Saturday at the sea, hot sunny afternoon, walking along the shoreline. A red triangle bikini, barefoot, a wide-brim straw hat, black sunglasses, a thin gold anklet, golden glowing skin. Hair loose under the hat. Hard bright sunlight. Her right hand holds a sandwich wrapped in paper, taking a bite. Her left hand holds a bottle of cold water. She holds nothing else.
+
+## hot_cloudy_afternoon_weekend
+Ground: pale golden beach sand with a couple of tiny shells. Saturday at the sea, hot cloudy afternoon, at the shoreline. A navy bikini, barefoot, a thin gold body chain at her waist. Hair in a glossy high ponytail. Soft warm light. Her right hand holds a sandwich wrapped in paper. Her left hand holds an iced coffee with a straw. She holds nothing else.
+
+## hot_rain_afternoon_weekend
+Ground: wet glossy blue-slate paving stones. Warm summer downpour on a Saturday afternoon, shopping in town. A thin open glossy cherry-red raincoat over a black slip mini dress, white rubber slides, wet shiny legs, laughing. Her right hand holds an emerald-green umbrella over her head. One large glossy white shopping tote hangs from her left shoulder by its long handles, and her left hand rests on the handles at her shoulder. That tote is the only bag: no bag in her hands. She holds nothing else.
+
+## cold_clear_evening_weekend
+Ground: ochre cobbles lit warm by a street lamp. Saturday night out on a freezing clear evening. A black sequinned long-sleeve mini dress under a long ivory wool coat worn open, sheer black tights, black suede over-the-knee boots with a slim high stiletto heel, diamond drop earrings, red lips. Glossy loose waves. Warm lamp light, deep shadow on the other side. Her right hand holds a small rose-gold clutch. Her left hand holds the coat edge at her waist. She holds nothing else.
+
+## cold_cloudy_evening_weekend
+Ground: ochre cobbles lit warm by a street lamp. Saturday night out, cold cloudy evening. An emerald satin mini dress under a short black faux-fur jacket, sheer black tights, black leather over-the-knee boots with a slim high stiletto heel, long gold earrings. Glossy waves. Warm lamp light. Her right hand holds a small gold clutch. Her left hand hangs relaxed at her side, empty.
+
+## cold_rain_evening_weekend
+Ground: wet glossy blue-slate paving stones. Saturday night out, cold rainy evening. A red satin mini dress under a long black patent trench worn open, sheer black tights, black patent over-the-knee boots with a slim high stiletto heel, diamond studs. Damp hair ends. Lamp light on the wet stones. Her right hand holds a black umbrella over her head. Her left hand holds a small black clutch. She holds nothing else.
+
+## cold_snow_evening_weekend
+Ground: fresh white snow. Saturday evening after skiing, dressed up for dinner at the resort. A black knit mini dress under a long camel wool coat worn open, sheer black tights, black suede over-the-knee boots with a slim high stiletto heel, a pearl pendant. Snowflakes in her glossy waves, rosy cheeks. Warm light from a window on one side. Her right hand holds a small black clutch. Her left hand holds the coat closed at her chest. She holds nothing else.
+
+## chilly_clear_evening_weekend
+Ground: ochre cobbles lit warm by a street lamp. Saturday night out, chilly clear evening. A short black satin corset-style mini dress, a cropped black leather jacket over her shoulders, sheer black tights, black pointed stiletto pumps, long gold drop earrings, red lips. Glossy waves. Warm lamp light. Her right hand holds a small red clutch. Her left hand holds the jacket lapel. She holds nothing else.
+
+## chilly_cloudy_evening_weekend
+Ground: ochre cobbles lit warm by a street lamp. Saturday night out, chilly cloudy evening. A burgundy velvet mini dress with a deep V neckline, a camel coat draped over her shoulders, sheer black tights, black suede over-the-knee boots with a high stiletto heel, pearl studs. Sleek low bun. Warm lamp light. Her right hand holds a small black clutch. Her left hand hangs relaxed at her side, empty.
+
+## chilly_rain_evening_weekend
+Ground: wet glossy blue-slate paving stones. Saturday night out, chilly rainy evening. A sapphire satin mini dress under a short black trench coat worn open, sheer black tights, black patent over-the-knee boots with a slim high stiletto heel, silver drop earrings. Damp hair ends. Lamp light on the wet stones. Her right hand holds a black umbrella over her head. Her left hand holds a small rose-gold clutch. She holds nothing else.
+
+## mild_clear_evening_weekend
+Ground: ochre cobbles lit warm by a street lamp. Saturday night out, mild clear evening. A sequinned gold slip mini dress with thin straps, nude stiletto sandals, gold hoops, a fine gold bracelet. Glossy loose waves. Warm lamp light. Her right hand holds a small gold clutch. Her left hand hangs relaxed at her side, empty.
+
+## mild_cloudy_evening_weekend
+Ground: ochre cobbles lit warm by a street lamp. Saturday night out, mild cloudy evening. A fitted black mini dress with a sheer mesh panel at the waist, black strappy stiletto sandals, pearl drop earrings. Sleek high ponytail. Warm lamp light. Her right hand holds a small black clutch. Her left hand hangs relaxed at her side, empty.
+
+## mild_rain_evening_weekend
+Ground: wet glossy blue-slate paving stones. Saturday night out, mild rainy evening. A red satin wrap mini dress under a short beige trench coat worn open, black patent stiletto pumps, gold hoops. Damp hair ends. Lamp light on the wet stones. Her right hand holds a beige umbrella over her head. Her left hand holds a small black clutch. She holds nothing else.
+
+## warm_clear_evening_weekend
+Ground: ochre cobbles lit warm by a street lamp. Saturday evening after a day at the sea, dinner by the harbour. A short white satin slip dress with a cowl neckline, gold strappy stiletto sandals, gold hoops and a thin gold anklet, sun-kissed glowing skin. Glossy waves. Warm lamp light. Her right hand holds a small gold clutch. Her left hand hangs relaxed at her side, empty.
+
+## warm_cloudy_evening_weekend
+Ground: ochre cobbles lit warm by a street lamp. Saturday night out, warm cloudy evening. A fitted black one-shoulder mini dress, nude stiletto sandals, diamond studs and a tennis bracelet. Glossy waves. Warm lamp light. Her right hand holds a small black clutch. Her left hand hangs relaxed at her side, empty.
+
+## warm_rain_evening_weekend
+Ground: wet glossy blue-slate paving stones. Saturday night out, warm rainy evening. A cobalt satin mini dress, black patent stiletto sandals, silver earrings, wet shiny legs. Damp hair ends. Lamp light on the wet stones. Her right hand holds a black umbrella over her head. Her left hand holds a small rose-gold clutch. She holds nothing else.
+
+## hot_clear_evening_weekend
+Ground: ochre cobbles lit warm by a street lamp. Saturday evening after the sea, a hot summer night out. A strapless coral bodycon mini dress, gold strappy stiletto sandals, gold hoops and a thin gold chain necklace, sun-kissed glowing skin. Glossy salty waves. Warm lamp light. Her right hand holds a small gold clutch. Her left hand hangs relaxed at her side, empty.
+
+## hot_cloudy_evening_weekend
+Ground: ochre cobbles lit warm by a street lamp. Saturday night out, hot cloudy evening. A black halter-neck mini dress with a cut-out at the waist, black strappy stiletto sandals, long gold earrings. Sleek high ponytail. Warm lamp light. Her right hand holds a small black clutch. Her left hand hangs relaxed at her side, empty.
+
+## hot_rain_evening_weekend
+Ground: wet glossy blue-slate paving stones. Saturday night out in warm summer rain. A short emerald satin slip dress, gold strappy stiletto sandals, gold hoops, wet shiny legs, laughing. Lamp light on the wet stones. Her right hand holds a bright yellow umbrella over her head. Her left hand holds a small gold clutch. She holds nothing else.
+
+## cold_clear_night_weekend
+Ground: ochre cobbles lit warm by a street lamp. Very late on Saturday night, freezing and clear, coming home from the party: very sleepy and very happy, eyes almost closed, a dreamy smile, still impeccably dressed. A black sequinned mini dress under a long ivory coat worn open, sheer black tights, black suede over-the-knee boots with a slim high stiletto heel, diamond earrings. Slightly undone waves. Moonlight and a warm lamp glow. Her right hand holds a small rose-gold clutch. Her left hand holds the coat closed at her chest. She holds nothing else.
+
+## cold_rain_night_weekend
+Ground: wet glossy blue-slate paving stones. Very late on a cold rainy Saturday night, coming home from the party, sleepy and happy, still impeccably dressed. A red satin mini dress under a long black trench worn open, sheer black tights, black patent over-the-knee boots with a slim high stiletto heel. Damp hair. Lamp light on the wet stones. Her right hand holds a black umbrella over her head. Her left hand holds a small black clutch. She holds nothing else.
+
+## cold_snow_night_weekend
+Ground: fresh white snow. Very late on a snowy Saturday night at the ski resort, walking back from dinner, sleepy and happy. An emerald satin mini dress under a white faux-fur coat, sheer black tights, black leather over-the-knee boots with a slim high stiletto heel. Snowflakes in her hair, heavy eyelids, a soft smile. Cool night light with a warm glow on one side. Her right hand holds a small black clutch. Her left hand holds the fur collar at her throat. She holds nothing else.
+
+## chilly_clear_night_weekend
+Ground: ochre cobbles lit warm by a street lamp. Very late on a chilly clear Saturday night, coming home, sleepy and happy. A short black satin corset mini dress, a cropped black leather jacket over her shoulders, sheer black tights, black stiletto pumps, gold drop earrings. Undone waves, heavy eyelids. Moonlight and lamp glow. Her right hand holds a small red clutch. Her left hand holds the jacket lapel. She holds nothing else.
+
+## chilly_rain_night_weekend
+Ground: wet glossy blue-slate paving stones. Very late on a chilly rainy Saturday night, coming home, tired and happy. A sapphire satin mini dress under a short black trench worn open, sheer black tights, black patent over-the-knee boots with a slim high stiletto heel. Damp hair. Lamp light on the wet stones. Her right hand holds a black umbrella over her head. Her left hand holds a small rose-gold clutch. She holds nothing else.
+
+## mild_clear_night_weekend
+Ground: ochre cobbles lit warm by a street lamp. Very late on a mild Saturday night, coming home, sleepy and glowing. A sequinned gold slip mini dress, nude stiletto sandals, gold hoops. Undone waves, a dreamy half-closed smile. Moonlight and lamp glow. Her right hand holds a small gold clutch. Her left hand hangs relaxed at her side, empty.
+
+## mild_rain_night_weekend
+Ground: wet glossy blue-slate paving stones. Very late on a mild rainy Saturday night, coming home, tired and happy. A red satin wrap mini dress under a short beige trench worn open, black patent stiletto pumps. Damp hair. Lamp light on the wet stones. Her right hand holds a beige umbrella over her head. Her left hand holds a small black clutch. She holds nothing else.
+
+## warm_clear_night_weekend
+Ground: ochre cobbles lit warm by a street lamp. Very late on a warm Saturday night after a day at the sea, coming home, sleepy and happy. A short white satin slip dress, gold strappy stiletto sandals, gold hoops, sun-kissed skin. Undone salty waves, heavy eyelids. Moonlight and lamp glow. Her right hand holds a small gold clutch. Her left hand hangs relaxed at her side, empty.
+
+## warm_rain_night_weekend
+Ground: wet glossy blue-slate paving stones. Very late on a warm rainy Saturday night, coming home, tired and laughing. A cobalt satin mini dress, black patent stiletto sandals, wet shiny legs, damp hair. Lamp light on the wet stones. Her right hand holds a black umbrella over her head. Her left hand holds a small rose-gold clutch. She holds nothing else.
+
+## hot_clear_night_weekend
+Ground: ochre cobbles lit warm by a street lamp. Very late on a hot Saturday summer night, coming home, sleepy and happy. A strapless coral bodycon mini dress, gold strappy stiletto sandals, gold hoops, sun-kissed glowing skin. Undone salty waves, a dreamy smile. Moonlight and lamp glow. Her right hand holds a small gold clutch. Her left hand hangs relaxed at her side, empty.
+
+## hot_rain_night_weekend
+Ground: wet glossy blue-slate paving stones. Very late on a warm rainy Saturday summer night, coming home, tired and laughing. A short emerald satin slip dress, gold strappy stiletto sandals, wet shiny legs, damp hair. Lamp light on the wet stones. Her right hand holds a cherry-red umbrella over her head. Her left hand holds a small gold clutch. She holds nothing else.
+
+## music_cold_earlymorning
+Very early on a cold morning, just woken up, music on before the day starts. A long fluffy cream fleece robe over soft sky-blue pyjamas, thick wool socks, no shoes. Sleepy eyes, faint dark circles, tousled hair. Pale dawn light from one side. Her right hand holds a steaming mug of coffee. Her left hand rests on the armrest. She holds nothing else.
+
+## music_cold_morning
+A slow cold morning with music on. A chunky oversized cream knit sweater slipping off one shoulder, black leggings, thick wool socks, no shoes. Hair loose. Fresh morning light. Her right hand holds a cup of coffee. Her left hand holds an open magazine on her knees. She holds nothing else.
+
+## music_cold_afternoon
+A cold afternoon curled up with music. A soft sky-blue cashmere jumper dress, sheer black tights, no shoes, legs tucked to one side. Hair in a loose braid. Soft window light. Her right hand holds a cup of tea. Her left hand rests on the armrest. She holds nothing else.
+
+## music_cold_evening
+Home after an evening out on a cold night, still dressed up: a fitted black knit mini dress, sheer black tights, small diamond studs, her heels kicked off on the floor beside the armchair, feet bare. Glossy loose waves, a relaxed smile. Warm lamp light. Her right hand holds a glass of red wine. Her left hand rests on the armrest. She holds nothing else.
+
+## music_cold_night
+Late on a cold night, sleepy, one last song. Long-sleeve burgundy silk pyjamas, a soft blanket over her legs, no shoes. Heavy eyelids, a dreamy smile, hair loose. Dim warm lamp light. Her right hand holds a mug of herbal tea. Her left hand rests on the blanket. She holds nothing else.
+
+## music_mild_earlymorning
+Early mild morning, music to wake up. An oversized white T-shirt slipping off one shoulder and soft sky-blue shorts, bare legs and feet. Sleepy eyes, tousled hair. Soft dawn light. Her right hand holds a mug of coffee. Her left hand rests on the armrest. She holds nothing else.
+
+## music_mild_morning
+A mild sunny morning with music. A loose white linen shirt over a lace bralette, short denim shorts, bare feet. Hair loose and glossy. Warm light. Her right hand holds a glass of orange juice. Her left hand rests on the armrest. She holds nothing else.
+
+## music_mild_afternoon
+A mild afternoon with music. A fitted ribbed mint-green knit dress, bare legs crossed, no shoes. Hair in a loose braid. Soft light. Her right hand holds an open fashion magazine. Her left hand rests on the armrest. She holds nothing else.
+
+## music_mild_evening
+Home after an evening out, still dressed up: a sequinned rose-gold slip mini dress, small diamond studs, her heels kicked off beside the armchair, feet bare. Glossy waves. Warm lamp light. Her right hand holds a glass of white wine. Her left hand rests on the armrest. She holds nothing else.
+
+## music_mild_night
+Late on a mild night, sleepy, music on. A short ivory satin nightdress with lace trim, a light robe open over it, no shoes. Heavy eyelids, hair loose. Dim warm light. Her right hand holds a mug of herbal tea. Her left hand rests on the armrest. She holds nothing else.
+
+## music_hot_earlymorning
+Early on a hot morning, music on. A thin white cotton camisole and tiny pyjama shorts, bare legs and feet, dewy skin. Sleepy eyes, hair up in a claw clip. Warm dawn light. Her right hand holds a glass of iced water. Her left hand rests on the armrest. She holds nothing else.
+
+## music_hot_morning
+A hot morning with music. A tiny coral crop top and short white linen shorts, bare feet, glowing skin. Hair in a high ponytail. Bright light. Her right hand holds an iced coffee with a straw. Her left hand fans her neck with a flat open palm. She holds nothing else.
+
+## music_hot_afternoon
+A hot afternoon with music, the shutters half closed. A thin white slip mini dress, bare legs, no shoes, dewy skin. Hair in a loose top knot. Warm dim light in stripes. Her right hand holds a small open paper fan. Her left hand holds a glass of iced lemonade. She holds nothing else.
+
+## music_hot_evening
+Home after a hot evening out, still dressed up: a strapless coral bodycon mini dress, gold hoops and a thin gold chain necklace, her heels kicked off beside the armchair, feet bare. Glowing skin, glossy waves. Warm lamp light. Her right hand holds a glass of white wine. Her left hand rests on the armrest. She holds nothing else.
+
+## music_hot_night
+Late on a hot night, sleepy, music on. A short white satin slip nightdress, no shoes, dewy skin. Heavy eyelids, hair loose. Dim warm light. Her right hand holds a glass of iced water. Her left hand rests on the armrest. She holds nothing else.
+
+## music_cold_earlymorning_weekend
+Saturday dawn on a cold day, no rush, music on. A long cream fleece robe over pink pyjamas, fluffy socks, no shoes, legs tucked up. Sleepy and smiling, tousled hair. Pale dawn light. Her right hand holds a big mug of cappuccino. Her left hand rests on the armrest. She holds nothing else.
+
+## music_cold_morning_weekend
+A lazy cold Saturday morning with music. An oversized chunky red knit sweater, black leggings, thick wool socks, no shoes. Hair loose. Soft light. Her right hand holds a cup of hot chocolate. Her left hand holds a croissant. She holds nothing else.
+
+## music_cold_afternoon_weekend
+A cold Saturday afternoon curled up with music. A soft cream cable-knit jumper dress, sheer black tights, no shoes, a blanket over her knees. Hair in a braid. Soft window light. Her right hand holds an open paperback book. Her left hand rests on the blanket. She holds nothing else.
+
+## music_cold_evening_weekend
+Home after a Saturday night out, still dressed up: an emerald satin mini dress, long gold drop earrings and thin gold bangles, sheer black tights, her heels kicked off beside the armchair. Glossy waves. Warm lamp light. Her right hand holds a glass of champagne. Her left hand rests on the armrest. She holds nothing else.
+
+## music_cold_night_weekend
+Very late on a cold Saturday night, very sleepy, last song. Long-sleeve silk pyjamas in rose pink, a cosy blanket, no shoes. Eyes almost closed, a happy smile. Dim warm light. Her right hand holds a mug of tea. Her left hand rests on the blanket. She holds nothing else.
+
+## music_mild_earlymorning_weekend
+Saturday dawn, mild, music on. An oversized white shirt worn as a nightshirt, bare legs and feet. Sleepy, tousled hair. Soft dawn light. Her right hand holds a mug of coffee. Her left hand rests on the armrest. She holds nothing else.
+
+## music_mild_morning_weekend
+A mild Saturday morning with music. A loose pink linen shirt over a white bralette, short white shorts, bare feet. Hair loose. Warm light. Her right hand holds a glass of orange juice. Her left hand holds a croissant. She holds nothing else.
+
+## music_mild_afternoon_weekend
+A mild Saturday afternoon with music. A short floral wrap dress, bare legs crossed, no shoes. Hair in a loose braid. Soft light. Her right hand holds an open paperback book. Her left hand rests on the armrest. She holds nothing else.
+
+## music_mild_evening_weekend
+Home after a Saturday night out, still dressed up: a burgundy velvet wrap mini dress, a pearl pendant necklace and pearl studs, her heels kicked off beside the armchair, feet bare. Glossy waves. Warm lamp light. Her right hand holds a glass of red wine. Her left hand rests on the armrest. She holds nothing else.
+
+## music_mild_night_weekend
+Very late on a mild Saturday night, sleepy, music on. A short ivory satin nightdress, no shoes. Heavy eyelids, hair loose. Dim warm light. Her right hand holds a glass of water. Her left hand rests on the armrest. She holds nothing else.
+
+## music_hot_earlymorning_weekend
+Saturday dawn on a hot day, music on. A thin white camisole and tiny shorts, bare legs and feet, dewy skin. Sleepy, hair in a claw clip. Warm dawn light. Her right hand holds a glass of iced water. Her left hand rests on the armrest. She holds nothing else.
+
+## music_hot_morning_weekend
+A hot Saturday morning with music, ready for the sea. A red bikini under a sheer white kaftan worn open, bare feet, glowing skin. Hair loose. Bright light. Her right hand holds an iced coffee with a straw. Her left hand rests on the armrest. She holds nothing else.
+
+## music_hot_afternoon_weekend
+A hot Saturday afternoon back from the sea. A tiny turquoise bikini under a short white sarong, bare feet, sun-kissed glowing skin, salty damp hair. Warm light. Her right hand holds a slice of watermelon. Her left hand rests on the armrest. She holds nothing else.
+
+## music_hot_evening_weekend
+Home after a hot Saturday night out, still dressed up: a short champagne silk slip dress with spaghetti straps and a deep V neckline, long gold drop earrings, her heels kicked off beside the armchair, feet bare. Glowing skin. Warm lamp light. Her right hand holds a glass of champagne. Her left hand rests on the armrest. She holds nothing else.
+
+## music_hot_night_weekend
+Very late on a hot Saturday night, sleepy, music on. A short white satin slip nightdress, no shoes, dewy skin. Eyes almost closed, a dreamy smile. Dim warm light. Her right hand holds a glass of iced water. Her left hand rests on the armrest. She holds nothing else.
+
+## halloween_earlymorning
+Ground: dry warm beige and terracotta stone cobbles. Halloween, early morning dog walk. A long black puffer coat over an orange hoodie, black leggings, white low-top sneakers, a small black knit beanie with tiny cat ears. Her little dog, a small fluffy apricot toy poodle wearing a tiny orange pumpkin costume, trots ahead on a thin tan leash, fully inside the frame. Sleepy, a yawn. Pale dawn light. Her left hand holds the leash. Her right hand covers her yawn. She holds nothing else.
+
+## halloween_morning
+Ground: dry warm beige and terracotta stone cobbles. Halloween morning in town. A black fitted turtleneck, a short orange pleated mini skirt, black opaque tights, black leather loafers, small bat-shaped earrings. Hair loose. Fresh light. Her right hand holds a small carved pumpkin by its stem. Her left hand holds a takeaway pumpkin-spice latte with a lid. She holds nothing else.
+
+## halloween_afternoon
+Ground: dry warm beige and terracotta stone cobbles. Halloween afternoon, shopping for the party. A black leather jacket over a black-and-orange striped knit mini dress, black tights, white low-top sneakers. Hair in a high ponytail. Soft light. Her right hand holds a paper shopping bag with a pointed black witch hat sticking out of it. Her left hand hangs relaxed at her side, empty.
+
+## halloween_evening
+Ground: ochre cobbles lit warm by a street lamp. Halloween party, a glamorous witch costume: a fitted black velvet corset mini dress, a tall pointed black witch hat, sheer black stockings, black stiletto pumps, dark red lipstick, glossy waves. Warm street-lamp light, deep shadow on the other side. Her right hand holds a small round black clutch shaped like a cauldron. Her left hand holds a short black wooden wand. She holds nothing else.
+
+## halloween_night
+Ground: ochre cobbles lit warm by a street lamp. Late on Halloween night, coming home from the party, sleepy and happy, still in her witch costume: a black velvet corset mini dress, sheer black stockings, black stiletto pumps, the pointed witch hat slightly askew, smudged dark lipstick. Dim warm light. Her right hand holds a small round black cauldron-shaped clutch. Her left hand hangs relaxed at her side, empty.
+
+## xmas_earlymorning
+Ground: fresh white snow. Christmas dawn, dog walk in the snow. A long white puffer coat, a red knit beanie with a pompom, a red scarf, black leggings, shearling-lined low tan loafers. Her little dog, a small fluffy apricot toy poodle in a tiny red Christmas jumper, trots ahead on a thin tan leash, fully inside the frame. Sleepy but smiling, rosy cheeks, snowflakes on her beanie. Her left hand holds the leash. Her right hand covers a yawn. She holds nothing else.
+
+## xmas_morning
+Ground: fresh white snow. Christmas morning: a fitted cream cable-knit sweater dress, sheer tights, tan suede loafers, a red bobble hat. Rosy cheeks, a happy smile, snowflakes on her hat. Fresh light. She carries three wrapped presents with big red bows, stacked and held against her chest with both arms. Both her hands are under the stack of presents. She holds nothing else.
+
+## xmas_afternoon
+Ground: fresh white snow. Christmas afternoon walk: a long red wool coat with a white faux-fur collar, black knit mini dress, sheer black tights, black leather loafers. Snowflakes in her hair. Soft light. Her right hand holds a glossy red gift bag. Her left hand holds a takeaway cup of mulled wine. She holds nothing else.
+
+## xmas_evening
+Ground: ochre cobbles lit warm by a street lamp. Christmas Eve dinner, dressed up: a red velvet off-the-shoulder mini dress, sheer black tights, black velvet stiletto pumps, diamond drop earrings, red lips, glossy waves. Warm lamp light with soft golden fairy-light glints on her dress. Her right hand holds a small gold clutch. Her left hand holds a small wrapped present with a gold bow. She holds nothing else.
+
+## xmas_night
+Ground: ochre cobbles lit warm by a street lamp. Late on Christmas night, walking home, sleepy and happy: the red velvet off-the-shoulder mini dress, sheer black tights, black velvet stiletto pumps, a camel coat worn open, a dreamy smile. Dim warm light. Her right hand holds a small gold clutch. Her left hand holds the coat closed at her chest. She holds nothing else.
+
+## newyear_earlymorning
+Ground: ochre cobbles lit warm by a street lamp. Dawn on New Year's Day, walking home after the party, very sleepy but happy: a gold sequinned mini dress, a long black coat worn open, gold strappy stiletto sandals, a few confetti in her hair, smudged lipstick. Pale dawn light. Her right hand holds a small gold clutch. Her left hand holds the coat closed at her chest. She holds nothing else.
+
+## newyear_morning
+Ground: dry warm beige and terracotta stone cobbles. New Year's Day morning, slept late, out for breakfast. A long cream wool coat over oatmeal loungewear, oversized black sunglasses, white low-top sneakers, messy bun. A tired happy smile. Soft light. Her right hand holds a takeaway coffee cup with a lid. Her left hand holds a croissant. She holds nothing else.
+
+## newyear_afternoon
+Ground: dry warm beige and terracotta stone cobbles. New Year's Day afternoon stroll. A camel coat over a black turtleneck and slim jeans, black leather loafers, a cream knit scarf. Hair loose. Calm, content. Soft winter light. Her right hand holds a takeaway hot chocolate with a lid. Her left hand is tucked into her coat pocket. She holds nothing else.
+
+## newyear_evening
+Ground: ochre cobbles lit warm by a street lamp. New Year's Eve party, dressed to sparkle: a gold sequinned mini dress with thin straps, gold strappy stiletto sandals, long diamond drop earrings, glossy waves, a glamorous smile. Warm lamp light with golden sparkle on the sequins. Her right hand holds a champagne flute. Her left hand holds a small gold clutch. She holds nothing else.
+
+## newyear_night
+Ground: ochre cobbles lit warm by a street lamp. The first hours of the new year, walking home, very sleepy but happy: the gold sequinned mini dress, gold strappy stiletto sandals, a few confetti in her hair, a paper party crown slightly askew, smudged lipstick, a dreamy half-smile. Very dim warm light. Her right hand holds a small gold clutch. Her left hand hangs relaxed at her side, empty.
