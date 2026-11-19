@@ -45,8 +45,12 @@ write the labels (`STYLE.`, `THE SCENE.`) yourself.
   same character in every picture, so never put clothes here.
 - **POSE WEATHER**: used for every weather picture and every special day. Full figure, from head to feet, nothing cropped. 3/4
   view, walking calmly, facing left. Portrait format 3:4, centred, about 85% of the image height, clear margin on every side,
-  everything held entirely inside the frame. A small, low, flat ellipse of ground under the feet (the scene says what it is), and
-  that ground never reaches the left or right edge of the image.
+  everything held entirely inside the frame. The character stands on a small round
+  pedestal disc, like a diorama or display stand, about two shoulder widths wide, floating on the plain background with background all
+  around it (the scene says what the surface of the disc is, for example "Ground: wet blue-slate paving"). Give the disc a thin darker
+  rim so it reads as a separate object, and say it is the only ground: nothing else on the background beside or below it. Both feet rest
+  on top of it. (Avoid "ellipse" or "patch of ground": image models then paint a full-width floor, especially with bright ground such as
+  snow, sand or light cobbles.)
 - **POSE MUSIC**: used for the `music_` pictures. The character sits in the same piece of furniture every time (describe it
   exactly: colour, material, shape), wearing headphones. Square 1:1, the whole chair and the whole character in frame. The chair
   stands on nothing, with only a soft contact shadow under it.
@@ -102,7 +106,7 @@ These come from generating hundreds of pictures. Follow them unless the user ask
 Pictures end up with a transparent background (a flat chroma-key colour is removed automatically on upload). There are two ways, and the current file shows which one the user follows:
 
 - **The generator gives a transparent PNG** (for example ChatGPT): the STYLE asks for a transparent background, no ground shadow
-  outside the ground ellipse.
+  outside the pedestal disc.
 - **A flat colour that is removed afterwards** (a "chroma key", for example exactly `#808080` grey). Then nothing on the character
   may be close to that colour. Ask for clean, saturated colours: no grey, silver or charcoal clothes; no muted grey-greens such as
   sage, olive, khaki or taupe; nothing transparent (clear umbrellas, plastic raincoats). These are punched out with the background: every pixel of that colour is removed, also in the gaps between legs and arms.
