@@ -79,7 +79,7 @@ def noisy_webp():
 def grey_bg():                                       # an opaque figure on a plain grey background
     from PIL import Image as _I, ImageDraw as _D
     im = _I.new("RGB", (300, 600), (140, 140, 140)); _D.Draw(im).rectangle((100, 100, 200, 560), fill=(180, 40, 40)); b = io.BytesIO(); im.save(b, "PNG"); return b.getvalue()
-GB = images.ImageLibrary(Path(tempfile.mkdtemp())); GB.setup()
+GB = images.ImageLibrary(Path(tempfile.mkdtemp()) / "sets" / "gb"); GB.setup()
 def legs_gap():                                      # two legs with a grey gap between them, and an arm gap: all grey must go
     im = _I.new("RGB", (300, 600), (128, 128, 128)); dd = _D.Draw(im)
     dd.rectangle((100, 100, 200, 350), fill=(180, 40, 40)); dd.rectangle((100, 350, 130, 560), fill=(40, 40, 180)); dd.rectangle((170, 350, 200, 560), fill=(40, 40, 180))
@@ -191,4 +191,26 @@ for y in range(540, 600):
     for x in range(400): wide.putpixel((x, y), (230, 230, 230, 255))              # ground reaching both sides
 expect_error("ground on both sides", lambda: images.remove_background(wide), "ground reaches")
 print("  ok   background removal: edge-connected + closed gaps, small details kept, tolerance, ground refused")
+# originals: an opaque upload keeps the picture as uploaded (outside the served folder) and the settings; delete / replace remove it
+import shutil as _sh
+_root = Path(tempfile.mkdtemp()); _lib = images.ImageLibrary(_root / "sets" / "t"); _lib.setup()
+_op = Image.new("RGBA", (300, 500), (128, 128, 128, 255))
+for _y in range(60, 460):
+    for _x in range(120, 180): _op.putpixel((_x, _y), (150, 40, 40, 255))
+_b = io.BytesIO(); _op.save(_b, "PNG"); _raw = _b.getvalue()
+_slot = _lib.add("mild_clear_afternoon", _raw)
+assert _slot["orig"] == 1 and _slot["bg"] == {"color": "", "tol": 50, "hole": 15}
+assert _lib.original("mild_clear_afternoon") == (_raw, "image/png") and _lib.original("../x") is None
+assert not any(p.suffix == ".orig" for p in (_root / "sets" / "t").iterdir())            # not in the served folder
+_cut = Image.new("RGBA", (300, 500), (0, 0, 0, 0))
+for _y in range(60, 460):
+    for _x in range(120, 180): _cut.putpixel((_x, _y), (150, 40, 40, 255))
+_b2 = io.BytesIO(); _cut.save(_b2, "PNG")
+_slot = _lib.add("mild_clear_afternoon", _b2.getvalue(), original=_raw, params={"color": "#808080", "tol": 30, "hole": 5})
+assert _slot["bg"] == {"color": "#808080", "tol": 30, "hole": 5}
+_lib.add("hot_clear_evening", _b2.getvalue())                                          # a transparent upload keeps no original
+assert "orig" not in _lib.listing()["slots"]["hot_clear_evening"] and _lib.original("hot_clear_evening") is None
+_lib.delete("mild_clear_afternoon"); assert _lib.original("mild_clear_afternoon") is None
+_sh.rmtree(_root, ignore_errors=True)
+print("  ok   originals kept outside the served folder, settings stored, removed on delete")
 print("ALL OK")

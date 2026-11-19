@@ -2,7 +2,7 @@
 
 A Home Assistant integration and Lovelace card that shows **an avatar dressed for the weather**: it changes outfit with the temperature, the sky, the time of day, weekends, holidays and special days, on a living sky background (sun, moon, stars, clouds, rain, snow, fog, lightning). A music view takes over while a media player plays.
 
-> **Status: beta (0.3.0).** It works, but expect rough edges. Screenshots are coming.
+> **Status: beta (0.3.1).** It works, but expect rough edges. Screenshots are coming.
 
 ## What you get
 - A sidebar **panel** to set everything up: weather sources, thresholds, times of day, holidays, special days, the pictures and the prompts to make them.

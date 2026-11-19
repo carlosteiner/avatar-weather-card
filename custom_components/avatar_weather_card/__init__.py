@@ -14,12 +14,12 @@ from .const import DOMAIN, IMAGES_URL, PANEL_URL, REFERENCE_URL, STATIC_URL
 from .images import ReferenceLibrary
 from .sets import SetLibrary
 from .store import ConfigStore
-from .views import BackupDownloadView, ReferenceUploadView, SetExportView, SetImportView, UploadView
+from .views import BackupDownloadView, OriginalView, ReferenceUploadView, SetExportView, SetImportView, UploadView
 
 _LOGGER = logging.getLogger(__name__)
 # Cache-busting token for the frontend files (panel, card and the modules they import): change it whenever a frontend file changes,
 # and the same token in the import lines of avatar-weather-card.js and avatar-weather-panel.js.
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 
 
 async def _ensure_active(hass: HomeAssistant, store, sets: SetLibrary) -> None:
@@ -48,6 +48,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await hass.async_add_executor_job(ref.setup)
         data["reference"] = ref
         hass.http.register_view(UploadView(hass))
+        hass.http.register_view(OriginalView(hass))
         hass.http.register_view(ReferenceUploadView(hass))
         hass.http.register_view(BackupDownloadView(hass))
         hass.http.register_view(SetExportView(hass))

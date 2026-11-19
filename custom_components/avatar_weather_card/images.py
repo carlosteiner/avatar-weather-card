@@ -18,6 +18,14 @@ _SUFFIX = r"(_weekend)?(_\d+)?"
 MAX_BYTES = 12 * 1024 * 1024
 
 
+def _clean_bg(params: dict | None) -> dict:
+    """The background-removal settings kept with an original: colour "#rrggbb" (empty = detect it), tolerance and gap size 0..100."""
+    p = params if isinstance(params, dict) else {}
+    col = str(p.get("color", ""))
+    num = lambda k, d: max(0, min(100, int(p[k]))) if isinstance(p.get(k), (int, float)) and not isinstance(p.get(k), bool) else d
+    return {"color": col if re.fullmatch(r"#[0-9a-fA-F]{6}", col) else "", "tol": num("tol", 50), "hole": num("hole", 15)}
+
+
 def valid_name(name: str, event_ids: list[str]) -> bool:
     """Humidity has two levels, humid and normal. Only a "humid" tag counts; no tag (or dry/normal) means normal."""
     t, s, m = "|".join(TEMPS), "|".join(SKIES), "|".join(MOMENTS)
@@ -150,6 +158,8 @@ class ImageLibrary:
         """`folder` is the folder of one picture set: <name>.webp files and a manifest.json."""
         self.dir = folder
         self.manifest_path = self.dir / "manifest.json"
+        # the pictures as uploaded (grey background), kept out of the served folder: <root>/originals/<set>/<name>.orig
+        self.originals = folder.parent.parent / "originals" / folder.name
 
     def _read(self) -> dict:
         try:
@@ -191,7 +201,8 @@ class ImageLibrary:
     def listing(self) -> dict:
         return self._read()
 
-    def add(self, name: str, data: bytes, feet: int | None = None, tolerance: int = DEFAULT_TOLERANCE) -> dict:
+    def add(self, name: str, data: bytes, feet: int | None = None, tolerance: int = DEFAULT_TOLERANCE,
+            original: bytes | None = None, params: dict | None = None) -> dict:
         if len(data) > MAX_BYTES:
             raise ValueError("image too large (max 12 MB)")
         try:
@@ -202,7 +213,11 @@ class ImageLibrary:
         im = im.convert("RGBA")
         if im.width > 3000 or im.height > 3000:
             raise ValueError("image too large (max 3000 px per side)")
+        if original is not None and len(original) > MAX_BYTES:
+            raise ValueError("original too large (max 12 MB)")
         if im.getchannel("A").getextrema()[0] > 250:     # no transparency: a plain background (grey #808080, white...) is removed here
+            if original is None:
+                original, params = data, {}                # the picture as uploaded is kept, so the cut can be redone in the panel
             im = remove_background(im, tolerance)
         try:
             im = normalise(im)                           # crop the empty margin, put the standing point in the middle
@@ -220,8 +235,26 @@ class ImageLibrary:
         m = self._read()
         m["slots"][name] = {"feetY": int(feet) if feet else auto_feet, "h": im.height, "w": im.width,
                             "lum": lum, "v": int(time.time()), "auto": 1}
+        if original is not None:
+            self.originals.mkdir(parents=True, exist_ok=True)
+            (self.originals / f"{name}.orig").write_bytes(original)
+            m["slots"][name]["orig"] = 1
+            m["slots"][name]["bg"] = _clean_bg(params)
+        else:
+            (self.originals / f"{name}.orig").unlink(missing_ok=True)
         self._write(m)
         return m["slots"][name]
+
+    def original(self, name: str) -> tuple[bytes, str] | None:
+        """The picture as it was uploaded (with its background) and its media type, or None."""
+        if not re.fullmatch(r"[a-z0-9_]+", name or ""):
+            return None
+        p = self.originals / f"{name}.orig"
+        if not p.is_file():
+            return None
+        data = p.read_bytes()
+        kind = "image/png" if data[:4] == b"\x89PNG" else "image/webp" if data[8:12] == b"WEBP" else "image/jpeg"
+        return data, kind
 
     def replace_all(self, src: Path, slots: dict, body: int | None = None) -> None:
         """Replace the whole set with the pictures in `src` (<name>.webp for every slot): the old ones are deleted. Blocking."""
@@ -233,6 +266,7 @@ class ImageLibrary:
         for f in self.dir.glob("*.webp"):
             if f.stem not in slots:
                 f.unlink()
+        shutil.rmtree(self.originals, ignore_errors=True)     # the pictures are new: the old originals no longer belong to them
         self._write({"body": body or m.get("body", 900), "slots": slots})
 
     def delete(self, name: str) -> bool:
@@ -240,6 +274,7 @@ class ImageLibrary:
         had = m["slots"].pop(name, None) is not None
         self._write(m)
         (self.dir / f"{name}.webp").unlink(missing_ok=True)
+        (self.originals / f"{name}.orig").unlink(missing_ok=True)
         return had
 
 

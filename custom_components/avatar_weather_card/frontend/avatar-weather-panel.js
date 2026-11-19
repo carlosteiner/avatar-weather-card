@@ -1,7 +1,8 @@
 // Avatar Weather Card - admin panel: settings, prompts, images.
-import { SHARED, parsePrompts, serializePrompts, assemble, sceneOf, baseName, DEFAULT_URL, GUIDE_URL } from "./prompts.js?v=0.3.0";
-import { createSelector, aggregateWeather, solarMoment, sunriseMinutes, MUSIC_TEMPS } from "./selector.js?v=0.3.0";
-const VER = "0.3.0";
+import { SHARED, parsePrompts, serializePrompts, assemble, sceneOf, baseName, DEFAULT_URL, GUIDE_URL } from "./prompts.js?v=0.3.1";
+import { detectColor, isOpaque, cutBackground, hex, rgb } from "./bgcut.js?v=0.3.1";
+import { createSelector, aggregateWeather, solarMoment, sunriseMinutes, MUSIC_TEMPS } from "./selector.js?v=0.3.1";
+const VER = "0.3.1";
 // The cells of the Images grid (2026-11-08 reduction): 5 temperatures x 4 skies x 5 moments, snow only when cold, no cloudy at night,
 // the same cells on the weekend; music: 3 temperatures x 5 moments x weekday/weekend; special days: <id>_<moment>.
 // The finer names (freezing, heatwave, fog, wind, storm, hail, sleet, snowstorm, midday, goldenhour, lateevening) are still valid
@@ -584,7 +585,6 @@ class AvatarWeatherPanel extends HTMLElement {
       return `<section class="group"><header class="ghead"><h3><button type="button" class="gtog" data-sec="${s.key}" aria-expanded="${open}">${esc(s.title)}</button></h3><span class="gcount">${done} / ${tot}</span></header>${open ? `<div class="gbody">${inner}</div>` : ""}</section>`;
     };
     const totalCells = SECTIONS.reduce((a, s) => a + doneOf(s)[0], 0), totalDone = SECTIONS.reduce((a, s) => a + doneOf(s)[1], 0);
-    let tolInit = 50; try { const t = parseInt(localStorage.getItem("awc_bg_tol"), 10); if (t >= 0 && t <= 100) tolInit = t; } catch (e) { /* no storage */ }
     body.innerHTML = `
       <h2>Images <small>${all.length}</small></h2>
       <p class="h" style="padding:8px 12px;border-radius:10px;background:var(--card-background-color)">You are editing the set <b>${esc(lib.set_name || lib.set || "")}</b> (the active one). To work on another set, or to install, rename, back up or share sets, go to the <b>Settings</b> tab, <i>Picture sets</i>.</p>
@@ -593,18 +593,28 @@ class AvatarWeatherPanel extends HTMLElement {
         A file already named like a slot (<code>mild_rain_afternoon.png</code>) keeps its name and replaces that picture.</p>
       <p class="h">Tap a cell to see its prompt, ready to copy into your image generator: the shared sections (Prompts tab) plus the cell's own scene, which you can edit there. ${pr.custom ? "This set has its own prompt file." : "This set uses the built-in prompts."}</p>
       <div class="drop" id="idrop">Drop pictures here or <input type="file" id="ifile" multiple accept="image/png,image/webp"></div>
-      <p class="h" style="margin:6px 0"><label>Background removal (pictures on a plain background): <b id="tolv">${tolInit}</b>
-        <input type="range" id="tol" min="0" max="100" step="5" value="${tolInit}" style="vertical-align:middle;width:180px"></label>
-        <br>Lower keeps more of the picture (use it when a grey coat or shadow gets holes); higher removes more of the background colour left around the figure. Pictures that are already transparent are not touched.</p>
       <div class="log" id="ilog"></div>
       ${SECTIONS.map(secHtml).join("")}`;
-    const tolEl = r.getElementById("tol");
-    if (tolEl) tolEl.oninput = () => { r.getElementById("tolv").textContent = tolEl.value; try { localStorage.setItem("awc_bg_tol", tolEl.value); } catch (e) { /* no storage */ } };
     const log = r.getElementById("ilog"), say = (t, bad) => { const d = document.createElement("div"); d.textContent = t; if (bad) d.className = "err"; log.appendChild(d); };
 
     // ---- upload: the name comes from the cell (dropped on it, or the selected one) unless the file is already named like a slot
     const taken = new Set(all);
     const freeName = (nm) => { if (!taken.has(nm)) return nm; let k = 2; while (taken.has(`${nm}_${k}`)) k++; return `${nm}_${k}`; };
+    // ---- pictures on a plain background: cut here (the same function as the editor below), the original is kept on the server
+    const decode = async (blob) => {
+      const bmp = await createImageBitmap(blob), c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
+      const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(bmp, 0, 0);
+      return { w: c.width, h: c.height, canvas: c, data: x.getImageData(0, 0, c.width, c.height).data };
+    };
+    const pngOf = (data, w, h) => new Promise((ok) => { const c = document.createElement("canvas"); c.width = w; c.height = h; c.getContext("2d").putImageData(new ImageData(data, w, h), 0, 0); c.toBlob(ok, "image/png"); });
+    const prepare = async (f) => {         // null: the picture is already transparent and goes up as it is
+      const px = await decode(f);
+      if (!isOpaque(px.data)) return null;
+      const det = detectColor(px.data, px.w, px.h);
+      if (det.plain < 0.85) throw new Error("the background is not one plain colour: remove it first (or use a picture with a transparent background)");
+      const res = cutBackground(px.data, px.w, px.h, det.color, 50, 15);
+      return { blob: await pngOf(res.data, px.w, px.h), params: { color: hex(det.color), tol: 50, hole: 15 }, ground: res.ground };
+    };
     const send = async (files, cellName, secKey) => {
       files = files.filter((f) => /^image\/(png|webp)$/.test(f.type));
       if (!files.length) { say("Only PNG or WebP pictures (transparent, or with a plain background that is removed automatically).", true); return; }
@@ -615,9 +625,11 @@ class AvatarWeatherPanel extends HTMLElement {
         const cellN = cellName || (own ? null : (st.sel && st.sel.nm));
         if (!own && !cellN) { say(`${f.name}: select a cell first (or name the file after a slot, e.g. mild_rain_afternoon.png).`, true); continue; }
         const name = own || freeName(cellN);
-        const fd = new FormData(); fd.append("name", name); if (lib.set) fd.append("set", lib.set); if (tolEl) fd.append("tolerance", tolEl.value); fd.append("file", f);
+        const fd = new FormData(); fd.append("name", name); if (lib.set) fd.append("set", lib.set);
         const row = document.createElement("div"); row.textContent = `${f.name} → ${name} …`; log.appendChild(row);
         try {
+          const pre = await prepare(f);
+          if (pre) { fd.append("file", pre.blob, `${name}.png`); fd.append("original", f); fd.append("params", JSON.stringify(pre.params)); if (pre.ground) say(`${f.name}: the ground reaches both sides of the picture, so it will not be centred: crop it to a small patch under the feet.`, true); } else fd.append("file", f);
           const resp = await fetch("/api/avatar_weather_card/upload", { method: "POST", headers: { Authorization: `Bearer ${this._hass.auth.data.access_token}` }, body: fd });
           const j = await resp.json();
           if (resp.ok) { row.textContent = `${f.name} → ${name} ✓`; done++; taken.add(name); last = name.replace(/_\d+$/, ""); } else { row.textContent = `${f.name}: ${j.message}`; row.className = "err"; }
@@ -649,6 +661,57 @@ class AvatarWeatherPanel extends HTMLElement {
     };
     r.getElementById("ifile").onchange = (e) => { send([...e.target.files], null, null); e.target.value = ""; };
 
+    // ---- background editor: original and result side by side, colour / tolerance / gap size, saved as a new transparent picture
+    const openBg = async (n) => {
+      const host = r.querySelector("#bged"); if (!host) return;
+      host.innerHTML = `<p class="h">Loading…</p>`;
+      let orig;
+      try {
+        const resp = await fetch(`/api/avatar_weather_card/original?set=${encodeURIComponent(lib.set || "")}&name=${encodeURIComponent(n)}`, { headers: { Authorization: `Bearer ${this._hass.auth.data.access_token}` } });
+        if (!resp.ok) throw new Error((await resp.json()).message || `HTTP ${resp.status}`);
+        orig = await resp.blob();
+      } catch (e) { host.innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+      const px = await decode(orig), saved = (slots[n] || {}).bg || {}, det = detectColor(px.data, px.w, px.h);
+      let col = rgb(saved.color) || det.color, tol = Number.isFinite(saved.tol) ? saved.tol : 50, hole = Number.isFinite(saved.hole) ? saved.hole : 15, last = null, timer = null;
+      const checker = "repeating-conic-gradient(#8883 0 25%, transparent 0 50%) 50%/14px 14px";
+      host.innerHTML = `<div style="margin:10px 0;padding:10px 12px;border:1px solid var(--divider-color);border-radius:10px">
+        <b>Background of <code>${esc(n)}</code></b>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;margin:8px 0">
+          <div><div class="h">Original: click to pick the colour</div><canvas id="bgo" style="height:300px;max-width:100%;cursor:crosshair;border-radius:6px"></canvas></div>
+          <div><div class="h">Result</div><canvas id="bgr" style="height:300px;max-width:100%;border-radius:6px;background:${checker}"></canvas></div>
+        </div>
+        <p style="margin:6px 0">Colour <input type="color" id="bgc"> <code id="bgch"></code> <button class="s" id="bgauto" type="button">Detect</button></p>
+        <p style="margin:6px 0">Tolerance <input type="range" id="bgt" min="0" max="100" style="vertical-align:middle;width:200px"> <b id="bgtv"></b> <span class="h">how close to the colour still counts as background</span></p>
+        <p style="margin:6px 0">Gap size <input type="range" id="bgh" min="0" max="100" style="vertical-align:middle;width:200px"> <b id="bghv"></b> <span class="h">smallest closed gap (between legs, arms) that is removed; 0 = all</span></p>
+        <p class="err" id="bgwarn" hidden>The ground reaches both sides of the picture: it will not be centred. Crop it to a small patch under the feet.</p>
+        <p style="margin:8px 0 0"><button id="bgsave" type="button">Save</button> <button class="s" id="bgclose" type="button">Close</button><span id="bgmsg" style="margin-left:10px"></span></p></div>`;
+      const q = (id) => host.querySelector("#" + id), co = q("bgo"), cr = q("bgr");
+      co.width = cr.width = px.w; co.height = cr.height = px.h; co.getContext("2d").drawImage(px.canvas, 0, 0);
+      const draw = () => {
+        q("bgc").value = hex(col); q("bgch").textContent = hex(col); q("bgt").value = tol; q("bgtv").textContent = tol; q("bgh").value = hole; q("bghv").textContent = hole;
+        clearTimeout(timer);
+        timer = setTimeout(() => { last = cutBackground(px.data, px.w, px.h, col, tol, hole); cr.getContext("2d").putImageData(new ImageData(last.data, px.w, px.h), 0, 0); q("bgwarn").hidden = !last.ground; }, 40);
+      };
+      q("bgc").oninput = (e) => { col = rgb(e.target.value) || col; draw(); };
+      q("bgt").oninput = (e) => { tol = +e.target.value; draw(); };
+      q("bgh").oninput = (e) => { hole = +e.target.value; draw(); };
+      q("bgauto").onclick = () => { col = det.color; draw(); };
+      co.onclick = (e) => { const b = co.getBoundingClientRect(), x = Math.min(px.w - 1, Math.max(0, Math.floor((e.clientX - b.left) * px.w / b.width))), y = Math.min(px.h - 1, Math.max(0, Math.floor((e.clientY - b.top) * px.h / b.height))), i = (y * px.w + x) * 4; col = [px.data[i], px.data[i + 1], px.data[i + 2]]; draw(); };
+      q("bgclose").onclick = () => { clearTimeout(timer); host.innerHTML = ""; };
+      q("bgsave").onclick = async () => {
+        const m = q("bgmsg"); m.className = ""; m.textContent = "Saving…";
+        try {
+          if (!last) last = cutBackground(px.data, px.w, px.h, col, tol, hole);
+          const fd = new FormData(); fd.append("name", n); if (lib.set) fd.append("set", lib.set);
+          fd.append("file", await pngOf(last.data, px.w, px.h), `${n}.png`); fd.append("original", orig); fd.append("params", JSON.stringify({ color: hex(col), tol, hole }));
+          const resp = await fetch("/api/avatar_weather_card/upload", { method: "POST", headers: { Authorization: `Bearer ${this._hass.auth.data.access_token}` }, body: fd });
+          const j = await resp.json(); if (!resp.ok) throw new Error(j.message || `HTTP ${resp.status}`);
+          this._renderImages();
+        } catch (e) { m.className = "err"; m.textContent = e.message || "Error"; }
+      };
+      draw();
+    };
+
     // ---- the panel of the selected cell
     const showPanel = () => {
       r.querySelectorAll(".covpanel").forEach((p) => { p.hidden = true; p.innerHTML = ""; });
@@ -660,7 +723,7 @@ class AvatarWeatherPanel extends HTMLElement {
       if (cellBtn) cellBtn.classList.add("sel");
       const ex = exact(nm), c = ex.length ? null : cellFor(nm, /_weekend$/.test(nm), s.kind === "music");
       const pics = ex.length
-        ? `<div style="display:flex;gap:12px;flex-wrap:wrap">${ex.map((n) => `<div class="card" style="width:150px"><img style="height:210px" src="${src(n)}"><div>${esc(n)}</div><button class="s" data-del="${esc(n)}">Delete</button></div>`).join("")}</div>`
+        ? `<div style="display:flex;gap:12px;flex-wrap:wrap">${ex.map((n) => `<div class="card" style="width:150px"><img style="height:210px" src="${src(n)}"><div>${esc(n)}</div><button class="s" data-del="${esc(n)}">Delete</button>${(slots[n] || {}).orig ? `<button class="s" data-bg="${esc(n)}">Background…</button>` : ""}</div>`).join("")}</div><div id="bged"></div>`
         : `<p class="h"><span class="err">No picture of its own yet.</span> ${c && c.name ? `Today this cell shows <code>${esc(c.name)}</code> (${WORDS[c.q]}).` : "There is no other picture to fall back on."}</p>${c && c.name ? `<img style="height:150px;opacity:.6" src="${src(c.name)}">` : ""}`;
       const scene = sceneOf(pr.p, nm), full = assemble(pr.p, nm);
       const prompt = `<h4 style="margin:14px 0 4px">Scene of this picture</h4>
@@ -696,6 +759,7 @@ class AvatarWeatherPanel extends HTMLElement {
         st.sel = { sec: t.closest("details").parentElement.parentElement.querySelector(".gtog").dataset.sec, nm: t.dataset.n }; showPanel(); return;
       }
       if (t.dataset.pick) { st.sel = { sec: t.dataset.sec, nm: t.dataset.pick }; showPanel(); const b = r.querySelector(`.covpanel[data-sec="${t.dataset.sec}"]`); if (b) b.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
+      if (t.dataset.bg) { openBg(t.dataset.bg); return; }
       if (t.dataset.del) {
         if (!confirm(`Delete ${t.dataset.del}?`)) return;
         await this._hass.callWS({ type: "avatar_weather_card/image_delete", name: t.dataset.del, set: lib.set || "" });

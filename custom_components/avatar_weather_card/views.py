@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from aiohttp import web
 
 from homeassistant.components.http import HomeAssistantView
@@ -22,7 +24,7 @@ class UploadView(HomeAssistantView):
         if not request["hass_user"].is_admin:
             return self.json_message("Admin required", 403)
         data = self.hass.data[DOMAIN]
-        name, feet, blob, sid, tol = None, None, None, None, 50
+        name, feet, blob, sid, tol, orig, params = None, None, None, None, 50, None, None
         reader = await request.multipart()
         async for part in reader:
             if part.name == "set":
@@ -35,6 +37,13 @@ class UploadView(HomeAssistantView):
             elif part.name == "tolerance":
                 t = (await part.text()).strip()
                 tol = int(t) if t.isdigit() and 0 <= int(t) <= 100 else 50
+            elif part.name == "original":
+                orig = await part.read(decode=False)
+            elif part.name == "params":
+                try:
+                    params = json.loads(await part.text())
+                except ValueError:
+                    params = None
             elif part.name == "file":
                 blob = await part.read(decode=False)
         events = [d["id"] for d in data["store"].config["special_days"]]
@@ -46,10 +55,34 @@ class UploadView(HomeAssistantView):
         sid = sid or data["store"].active_set     # pictures go to the active set unless another one is named
         try:
             lib = await self.hass.async_add_executor_job(sets.lib, sid)
-            slot = await self.hass.async_add_executor_job(lib.add, name, blob, feet, tol)
+            slot = await self.hass.async_add_executor_job(lib.add, name, blob, feet, tol, orig or None, params)
         except ValueError as err:
             return self.json_message(str(err), 400)
         return self.json({"name": name, "set": sid, "slot": slot})
+
+
+class OriginalView(HomeAssistantView):
+    """The picture as it was uploaded (with its background), for editing the cut in the panel. Admin only."""
+    url = "/api/avatar_weather_card/original"
+    name = "api:avatar_weather_card:original"
+    requires_auth = True
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        self.hass = hass
+
+    async def get(self, request: web.Request) -> web.StreamResponse:
+        if not request["hass_user"].is_admin:
+            return self.json_message("Admin required", 403)
+        data = self.hass.data[DOMAIN]
+        sid = request.query.get("set") or data["store"].active_set
+        try:
+            lib = await self.hass.async_add_executor_job(data["sets"].lib, sid)
+        except ValueError:
+            return self.json_message("Set not found", 404)
+        found = await self.hass.async_add_executor_job(lib.original, request.query.get("name", ""))
+        if not found:
+            return self.json_message("No original", 404)
+        return web.Response(body=found[0], content_type=found[1], headers={"Cache-Control": "no-store"})
 
 
 class ReferenceUploadView(HomeAssistantView):

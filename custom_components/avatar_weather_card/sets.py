@@ -213,6 +213,8 @@ class SetLibrary:
         name = " ".join(str(name).split())[:80] or f"{self.meta(sid)['name']} (copy)"
         new = self._new_id(name)
         shutil.copytree(self.dir / sid, self.dir / new)
+        if (self.root / "originals" / sid).is_dir():
+            shutil.copytree(self.root / "originals" / sid, self.root / "originals" / new)
         if self._prompts_path(sid).is_file():
             shutil.copyfile(self._prompts_path(sid), self._prompts_path(new))
         self._write_meta(new, {**self.meta(sid), "name": name, "created": int(time.time())})
@@ -222,6 +224,7 @@ class SetLibrary:
         if not self.exists(sid):
             return False
         shutil.rmtree(self.dir / sid)
+        shutil.rmtree(self.root / "originals" / sid, ignore_errors=True)
         self._prompts_path(sid).unlink(missing_ok=True)
         return True
 
