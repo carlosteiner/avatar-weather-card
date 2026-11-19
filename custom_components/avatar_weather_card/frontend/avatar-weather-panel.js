@@ -189,7 +189,7 @@ class AvatarWeatherPanel extends HTMLElement {
     try { own = await this._hass.callWS({ type: "avatar_weather_card/prompts_get", set: sid }); } catch (e) { /* older backend */ }
     let text = own.text;
     if (!own.custom) {
-      if (this._defPrompts === undefined) { try { this._defPrompts = await (await fetch(`${DEFAULT_URL}?v=${VER}`)).text(); } catch (e) { this._defPrompts = ""; } }
+      if (this._defPrompts === undefined) { try { this._defPrompts = await (await fetch(`${DEFAULT_URL}?v=${VER}`, { cache: "no-cache" })).text(); } catch (e) { this._defPrompts = ""; } }
       text = this._defPrompts;
     }
     this._pr = { set: own.set || sid, custom: !!own.custom, text, p: parsePrompts(text) };
@@ -212,7 +212,7 @@ class AvatarWeatherPanel extends HTMLElement {
   // Everything an AI needs to write a prompt file: the guide, the exact picture names of this installation, the current file.
   async _aiPack(pr) {
     let guide = "";
-    try { guide = await (await fetch(`${GUIDE_URL}?v=${VER}`)).text(); } catch (e) { guide = "(the guide could not be loaded)"; }
+    try { guide = await (await fetch(`${GUIDE_URL}?v=${VER}`, { cache: "no-cache" })).text(); } catch (e) { guide = "(the guide could not be loaded)"; }
     const names = cellNames(this._cfg.special_days.map((d) => d.id).filter(Boolean));
     return `${guide.trim()}\n\n---\n\n# The pictures to write (${names.length})\n\nWrite one section for each of these names, in this order:\n\n${names.join("\n")}\n\n---\n\n# The current prompt file (use it as the example and keep what the user does not ask to change)\n\n\`\`\`\n${pr.text.trim()}\n\`\`\`\n`;
   }
