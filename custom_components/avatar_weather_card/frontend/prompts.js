@@ -56,11 +56,23 @@ export function sceneOf(p, name) {
   return b in p.scenes ? p.scenes[b] : "";
 }
 
+// The ground of a weather picture: the sentence "Ground: ochre cobbles." in its scene. The BASE paragraph of POSE WEATHER has a
+// {ground} placeholder that takes it, so the base is described in one piece (some image models get confused when the base refers to the scene).
+const GROUND = /(?:^|\s)Ground:\s*(.+?)\.(?=\s|$)/;
+
 // The full prompt of a picture, ready to paste into the image generator ("" when the picture has no scene).
 export function assemble(p, name) {
-  const scene = sceneOf(p, name).trim();
+  let scene = sceneOf(p, name).trim();
   if (!scene) return "";
-  const pose = isMusic(name) ? "POSE MUSIC" : "POSE WEATHER";
-  return ["STYLE", "CHARACTER", pose].map((k) => (p.shared[k] || "").trim() ? `${LABEL[k]}. ${p.shared[k].trim()}` : "").filter(Boolean)
-    .concat(`THE SCENE. ${scene}`).join("\n\n");
+  const music = isMusic(name), pose = music ? "POSE MUSIC" : "POSE WEATHER";
+  const poseText = (p.shared[pose] || "").trim();
+  let ground = "";
+  if (!music && poseText.includes("{ground}")) {          // only then the Ground sentence leaves the scene: an older file keeps working as it was
+    const m = GROUND.exec(scene);
+    if (m) { ground = m[1].trim(); scene = (scene.slice(0, m.index) + " " + scene.slice(m.index + m[0].length)).trim(); }
+  }
+  return ["STYLE", "CHARACTER", pose].map((k) => {
+    const t = k === pose ? poseText.replace(/\{ground\}/g, ground || "plain stone") : (p.shared[k] || "").trim();
+    return t ? `${LABEL[k]}. ${t}` : "";
+  }).filter(Boolean).concat(`THE SCENE. ${scene}`).join("\n\n");
 }

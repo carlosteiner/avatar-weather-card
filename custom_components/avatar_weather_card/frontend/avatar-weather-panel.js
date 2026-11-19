@@ -1,5 +1,5 @@
 // Avatar Weather Card - admin panel: settings, prompts, images.
-import { SHARED, parsePrompts, serializePrompts, assemble, sceneOf, baseName, DEFAULT_URL, GUIDE_URL } from "./prompts.js?v=0.3.1";
+import { SHARED, parsePrompts, serializePrompts, assemble, sceneOf, baseName, DEFAULT_URL, GUIDE_URL } from "./prompts.js?v=0.3.1-2";
 import { detectColor, isOpaque, cutBackground, hex, rgb } from "./bgcut.js?v=0.3.1";
 import { createSelector, aggregateWeather, solarMoment, sunriseMinutes, MUSIC_TEMPS } from "./selector.js?v=0.3.1";
 const VER = "0.3.1";

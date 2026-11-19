@@ -47,7 +47,7 @@ write the labels (`STYLE.`, `THE SCENE.`) yourself.
   view, walking calmly, facing left. Portrait format 3:4, centred, about 85% of the image height, clear margin on every side,
   everything held entirely inside the frame. The character stands on a small round
   pedestal disc, like a diorama or display stand, about two shoulder widths wide, floating on the plain background with background all
-  around it (the scene says what the surface of the disc is, for example "Ground: wet blue-slate paving"). Give the disc a thin darker
+  around it (write the placeholder `{ground}` where the surface is named: "The surface of the disc is {ground}, and ..."; every scene then starts with a sentence such as "Ground: wet blue-slate paving stones.", which the panel moves into the base paragraph, so the base never refers to the scene). Give the disc a thin darker
   rim so it reads as a separate object, and say it is the only ground: nothing else on the background beside or below it. Both feet rest
   on top of it. (Avoid "ellipse" or "patch of ground": image models then paint a full-width floor, especially with bright ground such as
   snow, sand or light cobbles.)
