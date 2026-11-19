@@ -9,7 +9,7 @@ import time
 import zipfile
 from pathlib import Path
 
-from PIL import Image, ImageChops
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 TEMPS = ["freezing", "cold", "chilly", "mild", "warm", "hot", "hotdry", "hothumid", "heatwave", "any"]
 SKIES = ["clear", "cloudy", "wind", "fog", "rain", "storm", "hail", "sleet", "snow", "snowstorm", "fair", "any"]
@@ -43,25 +43,61 @@ def normalise(im: Image.Image) -> Image.Image:
     return im
 
 
-def remove_background(im: Image.Image) -> Image.Image:
+DEFAULT_TOLERANCE = 50          # 0..100: how far from the background colour a pixel may be and still count as background
+
+
+def remove_background(im: Image.Image, tolerance: int = DEFAULT_TOLERANCE) -> Image.Image:
     """Make a plain background (grey, white... any single colour) transparent. `im` is RGBA and opaque.
-    The background colour is the one of the picture's border; only the area connected to the border goes (grey inside the figure stays),
-    the edge is softened and its colour cleaned of the grey halo. ValueError when the border is not one plain colour."""
+    The background colour is the one of the top edge and of the upper part of the sides. Only what is connected to the edge goes,
+    plus the closed gaps of background between legs and arms when they are big enough: a grey-ish detail of the figure (coat, shadow,
+    nail varnish) stays. The edge is softened and its colour cleaned of the background halo.
+    `tolerance` 0..100 (50 = default): higher removes more of the colours near the background, lower keeps more.
+    ValueError when the edge is not one plain colour, or when the ground reaches both sides of the picture."""
     w, h = im.size
     rgb = im.convert("RGB")
     px = rgb.load()
-    step_x, step_y = max(1, w // 200), max(1, h // 200)
-    border = [px[x, y] for x in range(0, w, step_x) for y in (0, h - 1)] + [px[x, y] for y in range(0, h, step_y) for x in (0, w - 1)]
+    up = int(h * 0.6)
+    sx, sy = max(1, w // 200), max(1, h // 200)
+    border = [px[x, 0] for x in range(0, w, sx)] + [px[x, y] for y in range(0, up, sy) for x in (0, w - 1)]
     bg = tuple(sorted(c[i] for c in border)[len(border) // 2] for i in range(3))
     near = sum(1 for c in border if max(abs(c[i] - bg[i]) for i in range(3)) <= 24)
     if near < 0.85 * len(border):
         raise ValueError("the background is not one plain colour: remove it first (or use a picture with a transparent background)")
-    T1, T2 = 12, 40                                         # difference from the background: up to T1 fully gone, over T2 fully kept
+    k = max(0.1, min(100, int(tolerance))) / 50.0
+    lo = max(2.0, 14.0 * k)                                  # up to `lo` away from the background: fully gone
+    hi = max(lo + 4.0, 36.0 * k)                             # over `hi` away: fully kept, in between a soft edge
     diff = ImageChops.difference(rgb, Image.new("RGB", rgb.size, bg))
     d = ImageChops.lighter(ImageChops.lighter(diff.getchannel("R"), diff.getchannel("G")), diff.getchannel("B"))
-    # every pixel of the background colour goes, wherever it is (also between the legs and the arms), with a small tolerance
-    alpha = d.point(lambda v: 0 if v <= T1 else 255 if v >= T2 else int((v - T1) * 255 / (T2 - T1)))
-    # the semi-transparent edge pixels still carry some background colour: take it out (c = (c - bg*(1-a)) / a)
+    # 1. the background region: pixels close to the colour AND connected to the edge
+    reg = d.point(lambda v: 255 if v < hi else 0)
+    seeds = [(x, 0) for x in range(0, w, 8)] + [(x, y) for y in range(0, up, 8) for x in (0, w - 1)]
+    for sd in seeds:
+        if reg.getpixel(sd) == 255:
+            ImageDraw.floodfill(reg, sd, 128)
+    gone = reg.point(lambda v: 255 if v == 128 else 0)
+    # 2. closed gaps (between legs and arms): clearly background-coloured, big enough, not touching the edge.
+    #    The thin fringes along the figure are shaved off first, so only the real gaps are left to look at.
+    cand = ImageChops.multiply(d.point(lambda v: 255 if v < lo else 0), reg.point(lambda v: 255 if v == 255 else 0))
+    core = cand.filter(ImageFilter.MinFilter(7))
+    need = max(20, int(w * h * 0.0003) // 4)
+    for _ in range(400):
+        bb = core.getbbox()
+        if bb is None:
+            break
+        row = core.crop((0, bb[1], w, bb[1] + 1)).getbbox()          # the first row of the mask has at least one pixel
+        ImageDraw.floodfill(core, (row[0], bb[1]), 128)
+        part = core.point(lambda v: 255 if v == 128 else 0)
+        if part.histogram()[255] >= need:
+            gone = ImageChops.lighter(gone, ImageChops.multiply(part.filter(ImageFilter.MaxFilter(7)), cand))
+        core = core.point(lambda v: 255 if v == 255 else 0)
+    # 3. alpha: inside the region a ramp by the distance from the colour, everywhere else fully opaque
+    ramp = d.point(lambda v: 0 if v <= lo else 255 if v >= hi else int((v - lo) * 255 / (hi - lo)))
+    zone = gone.filter(ImageFilter.MaxFilter(5))
+    alpha = Image.composite(ramp, Image.new("L", (w, h), 255), zone)
+    # the ground (snow, sand, paving) reaching both sides of the picture: the figure cannot be centred, refuse it
+    if alpha.crop((0, int(h * 0.6), 2, h)).getextrema()[1] > 128 and alpha.crop((w - 2, int(h * 0.6), w, h)).getextrema()[1] > 128:
+        raise ValueError("the ground reaches both sides of the picture: crop it to a small patch under the feet, or remove the background first")
+    # 4. the semi-transparent edge pixels still carry some background colour: take it out (c = (c - bg*(1-a)) / a)
     ab, data = alpha.tobytes(), bytearray(rgb.tobytes())
     for i in (j for j, v in enumerate(ab) if 0 < v < 255):
         a = ab[i] / 255.0
@@ -155,7 +191,7 @@ class ImageLibrary:
     def listing(self) -> dict:
         return self._read()
 
-    def add(self, name: str, data: bytes, feet: int | None = None) -> dict:
+    def add(self, name: str, data: bytes, feet: int | None = None, tolerance: int = DEFAULT_TOLERANCE) -> dict:
         if len(data) > MAX_BYTES:
             raise ValueError("image too large (max 12 MB)")
         try:
@@ -167,7 +203,7 @@ class ImageLibrary:
         if im.width > 3000 or im.height > 3000:
             raise ValueError("image too large (max 3000 px per side)")
         if im.getchannel("A").getextrema()[0] > 250:     # no transparency: a plain background (grey #808080, white...) is removed here
-            im = remove_background(im)
+            im = remove_background(im, tolerance)
         try:
             im = normalise(im)                           # crop the empty margin, put the standing point in the middle
         except ValueError as err:

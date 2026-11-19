@@ -22,7 +22,7 @@ class UploadView(HomeAssistantView):
         if not request["hass_user"].is_admin:
             return self.json_message("Admin required", 403)
         data = self.hass.data[DOMAIN]
-        name, feet, blob, sid = None, None, None, None
+        name, feet, blob, sid, tol = None, None, None, None, 50
         reader = await request.multipart()
         async for part in reader:
             if part.name == "set":
@@ -32,6 +32,9 @@ class UploadView(HomeAssistantView):
             elif part.name == "feet":
                 t = (await part.text()).strip()
                 feet = int(t) if t.isdigit() else None
+            elif part.name == "tolerance":
+                t = (await part.text()).strip()
+                tol = int(t) if t.isdigit() and 0 <= int(t) <= 100 else 50
             elif part.name == "file":
                 blob = await part.read(decode=False)
         events = [d["id"] for d in data["store"].config["special_days"]]
@@ -43,7 +46,7 @@ class UploadView(HomeAssistantView):
         sid = sid or data["store"].active_set     # pictures go to the active set unless another one is named
         try:
             lib = await self.hass.async_add_executor_job(sets.lib, sid)
-            slot = await self.hass.async_add_executor_job(lib.add, name, blob, feet)
+            slot = await self.hass.async_add_executor_job(lib.add, name, blob, feet, tol)
         except ValueError as err:
             return self.json_message(str(err), 400)
         return self.json({"name": name, "set": sid, "slot": slot})

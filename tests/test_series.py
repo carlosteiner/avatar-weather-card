@@ -174,4 +174,21 @@ assert store.validate({"sets": {"active": "my-set"}})["sets"]["active"] == "my-s
 expect_error("bad active", lambda: store.validate({"sets": {"active": "../x"}}), "set id")
 assert "avatar" not in store.validate({"avatar": {"wardrobe": ["x"]}})
 print("  ok   store validates sets.active; the old avatar settings are dropped")
+# background removal: connected to the edge + big closed gaps; small grey-ish details of the figure stay
+im = Image.new("RGBA", (400, 600), (128, 128, 128, 255))
+for y in range(100, 560):
+    for x in range(150, 250): im.putpixel((x, y), (120, 60, 30, 255))            # body
+for y in range(300, 420):
+    for x in range(180, 220): im.putpixel((x, y), (128, 128, 128, 255))           # closed gap (leg gap): goes
+for y in range(150, 156):
+    for x in range(160, 166): im.putpixel((x, y), (134, 134, 134, 255))           # small grey-ish detail: stays
+out = images.remove_background(im)
+a = out.getchannel("A")
+assert a.getpixel((10, 10)) == 0 and a.getpixel((200, 360)) == 0 and a.getpixel((200, 200)) == 255 and a.getpixel((162, 152)) == 255
+assert images.remove_background(im, 0).getchannel("A").getpixel((10, 10)) == 0
+wide = im.copy()
+for y in range(540, 600):
+    for x in range(400): wide.putpixel((x, y), (230, 230, 230, 255))              # ground reaching both sides
+expect_error("ground on both sides", lambda: images.remove_background(wide), "ground reaches")
+print("  ok   background removal: edge-connected + closed gaps, small details kept, tolerance, ground refused")
 print("ALL OK")

@@ -584,6 +584,7 @@ class AvatarWeatherPanel extends HTMLElement {
       return `<section class="group"><header class="ghead"><h3><button type="button" class="gtog" data-sec="${s.key}" aria-expanded="${open}">${esc(s.title)}</button></h3><span class="gcount">${done} / ${tot}</span></header>${open ? `<div class="gbody">${inner}</div>` : ""}</section>`;
     };
     const totalCells = SECTIONS.reduce((a, s) => a + doneOf(s)[0], 0), totalDone = SECTIONS.reduce((a, s) => a + doneOf(s)[1], 0);
+    let tolInit = 50; try { const t = parseInt(localStorage.getItem("awc_bg_tol"), 10); if (t >= 0 && t <= 100) tolInit = t; } catch (e) { /* no storage */ }
     body.innerHTML = `
       <h2>Images <small>${all.length}</small></h2>
       <p class="h" style="padding:8px 12px;border-radius:10px;background:var(--card-background-color)">You are editing the set <b>${esc(lib.set_name || lib.set || "")}</b> (the active one). To work on another set, or to install, rename, back up or share sets, go to the <b>Settings</b> tab, <i>Picture sets</i>.</p>
@@ -592,8 +593,13 @@ class AvatarWeatherPanel extends HTMLElement {
         A file already named like a slot (<code>mild_rain_afternoon.png</code>) keeps its name and replaces that picture.</p>
       <p class="h">Tap a cell to see its prompt, ready to copy into your image generator: the shared sections (Prompts tab) plus the cell's own scene, which you can edit there. ${pr.custom ? "This set has its own prompt file." : "This set uses the built-in prompts."}</p>
       <div class="drop" id="idrop">Drop pictures here or <input type="file" id="ifile" multiple accept="image/png,image/webp"></div>
+      <p class="h" style="margin:6px 0"><label>Background removal (pictures on a plain background): <b id="tolv">${tolInit}</b>
+        <input type="range" id="tol" min="0" max="100" step="5" value="${tolInit}" style="vertical-align:middle;width:180px"></label>
+        <br>Lower keeps more of the picture (use it when a grey coat or shadow gets holes); higher removes more of the background colour left around the figure. Pictures that are already transparent are not touched.</p>
       <div class="log" id="ilog"></div>
       ${SECTIONS.map(secHtml).join("")}`;
+    const tolEl = r.getElementById("tol");
+    if (tolEl) tolEl.oninput = () => { r.getElementById("tolv").textContent = tolEl.value; try { localStorage.setItem("awc_bg_tol", tolEl.value); } catch (e) { /* no storage */ } };
     const log = r.getElementById("ilog"), say = (t, bad) => { const d = document.createElement("div"); d.textContent = t; if (bad) d.className = "err"; log.appendChild(d); };
 
     // ---- upload: the name comes from the cell (dropped on it, or the selected one) unless the file is already named like a slot
@@ -609,7 +615,7 @@ class AvatarWeatherPanel extends HTMLElement {
         const cellN = cellName || (own ? null : (st.sel && st.sel.nm));
         if (!own && !cellN) { say(`${f.name}: select a cell first (or name the file after a slot, e.g. mild_rain_afternoon.png).`, true); continue; }
         const name = own || freeName(cellN);
-        const fd = new FormData(); fd.append("name", name); if (lib.set) fd.append("set", lib.set); fd.append("file", f);
+        const fd = new FormData(); fd.append("name", name); if (lib.set) fd.append("set", lib.set); if (tolEl) fd.append("tolerance", tolEl.value); fd.append("file", f);
         const row = document.createElement("div"); row.textContent = `${f.name} → ${name} …`; log.appendChild(row);
         try {
           const resp = await fetch("/api/avatar_weather_card/upload", { method: "POST", headers: { Authorization: `Bearer ${this._hass.auth.data.access_token}` }, body: fd });
