@@ -2,13 +2,20 @@
 
 A Home Assistant integration and Lovelace card that shows **an avatar dressed for the weather**: it changes outfit with the temperature, the sky, the time of day, weekends, holidays and special days, on a living sky background (sun, moon, stars, clouds, rain, snow, fog, lightning). A music view takes over while a media player plays.
 
-> **Status: beta (0.3.1).** It works, but expect rough edges. Screenshots are coming.
+![The card in four moments: a sunny afternoon, rain, snow and a clear night](docs/img/hero.webp)
+
+> **Status: beta (0.3.1).** It works, but expect rough edges.
 
 ## What you get
 - A sidebar **panel** to set everything up: weather sources, thresholds, times of day, holidays, special days, the pictures and the prompts to make them.
 - A **card** for your dashboards, with a visual editor: clock, weather, tomorrow's forecast, extra sensors, the avatar, the music view with controls.
 - A **picture selector** that picks the closest available picture, so a set of pictures can grow slowly.
 - **Ready-to-copy prompts** for AI image generators, from one plain-text prompt file per picture set: four shared sections (style, character, pose for weather, pose for music) plus one scene per picture. Built-in prompts included; download the instructions for an AI chatbot to write your own (see [Prompts](#prompts)).
+
+## Picture sets
+The pictures are yours to choose: install a ready-made set from the catalog with one click, or make your own. Same weather, three sets (Amanda, Laura and Samanta, all in the [images catalog](https://github.com/carlosteiner/avatar-weather-card-images)):
+
+![Sunny and rainy weather in three picture sets](docs/img/sets.webp)
 
 ## Requirements
 - Home Assistant 2024.7 or newer (tested on 2026.10) and a modern browser (the card uses CSS container query units).
