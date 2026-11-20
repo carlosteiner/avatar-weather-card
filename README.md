@@ -17,6 +17,11 @@ The pictures are yours to choose: install a ready-made set from the catalog with
 
 ![Sunny and rainy weather in three picture sets](docs/img/sets.webp)
 
+## Music view
+While a media player plays, the card turns into a music view: cover, track, progress, controls, and the avatar relaxing in her armchair, with a new picture for every song.
+
+![The music view with three picture sets](docs/img/music.webp)
+
 ## Requirements
 - Home Assistant 2024.7 or newer (tested on 2026.10) and a modern browser (the card uses CSS container query units).
 - Pictures of the character. A default series will be available from the images repository (see *Pictures*); you can also make your own.
