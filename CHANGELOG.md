@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0 (unreleased)
+## 0.3.1 (2026-11-20)
 First public version (beta).
 - Home Assistant integration with an admin panel in the sidebar (settings, images, prompts).
 - Lovelace card with a living sky background, the avatar for the current weather and time of day, clock, weather, tomorrow's forecast, extra sensors, music view with controls, visual editor.
