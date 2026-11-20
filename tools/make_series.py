@@ -24,6 +24,7 @@ def main() -> int:
     ap.add_argument("--release-base", default="", help="e.g. https://github.com/OWNER/REPO/releases/download")
     ap.add_argument("--prompts", default="", help="the set's prompt file (prompts.txt) to put in the zip")
     ap.add_argument("--index", default="", help="the images repository's index.json: the entry is added or replaced there")
+    ap.add_argument("--body", type=int, default=0, help="head-to-soles height of the figure, in px, at which she is shown full size (default 900); a smaller number shows her bigger")
     ap.add_argument("--exclude", default="", help="comma separated slot names to leave out")
     a = ap.parse_args()
     if not SERIES_ID.match(a.id):
@@ -35,6 +36,8 @@ def main() -> int:
     meta = {"id": a.id, "name": a.name, "version": a.version, "description": a.description, "author": a.author, "license": a.license,
             "attribution": a.attribution, "character": a.character, "models": a.models, "source": a.source,
             "slots": {n: {"feetY": slots[n]["feetY"], "h": slots[n]["h"], "w": slots[n]["w"]} for n in names}}
+    if a.body and a.body != 900:
+        meta["body"] = a.body
     os.makedirs(a.out, exist_ok=True)
     zpath = os.path.join(a.out, f"{a.id}-{a.version}.zip")
     with zipfile.ZipFile(zpath, "w", zipfile.ZIP_STORED) as z:     # webp is already compressed

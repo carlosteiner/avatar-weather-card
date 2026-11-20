@@ -4,7 +4,7 @@ A **series** is a ready-made set of pictures of one character, distributed as a 
 
 ## A series zip
 A flat zip with:
-- `series.json`: `{"id": "pencil-woman", "name": "...", "version": "0.1.0", "description": "...", "author": "...", "license": "CC BY 4.0", "attribution": "...", "character": "...", "models": "...", "slots": {"mild_clear_afternoon": {"feetY": 1023, "h": 1078, "w": 750}, ...}}` — `id` must match the id it is installed under; `slots` is optional (the soles line is detected when missing).
+- `series.json`: `{"id": "pencil-woman", "name": "...", "version": "0.1.0", "description": "...", "author": "...", "license": "CC BY 4.0", "attribution": "...", "character": "...", "models": "...", "slots": {"mild_clear_afternoon": {"feetY": 1023, "h": 1078, "w": 750}, ...}}` — `id` must match the id it is installed under; `slots` is optional (the soles line is detected when missing). `body` is optional (default 900, 300-3000): the figure's head-to-soles height, in picture pixels, that is shown at the normal size. Pictures where she fills fewer pixels than in other sets (say 810 px tall) get a smaller number (730) so that she is shown as big as in the others.
 - one `<slot>.webp` per picture (transparent, or on a plain chroma-key background that is removed on import), named like the slots (`mild_clear_afternoon.webp`, `music_cold_evening.webp`, `halloween_evening.webp`…). Pictures should be normalised like the ones the panel stores (empty margin cropped, figure centred on the standing point).
 - optional `prompts.txt`: the set's prompt file (see the README, *Prompts*). Installing a zip that has one replaces the set's prompts; a zip without one keeps them.
 

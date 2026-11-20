@@ -62,6 +62,14 @@ assert other.info("pencil-woman")["author"] == "Me"
 expect_error("exists", lambda: other.install(z, [], replace=False, backup=False), "already have", sets_mod.SetExists)
 print("  ok   export -> install round trip; an existing id is never overwritten by surprise")
 
+# "body": the figure size of a set travels in series.json (default 900 is not written)
+assert "body" not in sj, sj
+S.lib("pencil-woman").replace_all(S.lib("pencil-woman").dir, {n: s for n, s in S.lib("pencil-woman").listing()["slots"].items()}, 730)
+zb = S.export("pencil-woman"); assert json.loads(zipfile.ZipFile(io.BytesIO(zb)).read("series.json"))["body"] == 730
+o2 = sets_mod.SetLibrary(Path(tempfile.mkdtemp())); o2.setup(); o2.install(zb, [], replace=False, backup=False)
+assert o2.lib("pencil-woman").listing()["body"] == 730, o2.lib("pencil-woman").listing()
+print("  ok   body (figure size) is exported and installed")
+
 good = {"mild_clear_afternoon.webp": png(), "music_cold_evening.webp": png(), "halloween_evening.webp": png(), "readme.txt": b"x", "bogus_name.webp": png()}
 r = S.install(make_zip(good), ["halloween"], replace=False, backup=False, expect_id="demo")
 assert r["count"] == 3 and r["skipped"] == 2 and r["id"] == "demo", r

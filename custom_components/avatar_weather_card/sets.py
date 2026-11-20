@@ -240,6 +240,8 @@ class SetLibrary:
         sj = {"id": sid, **{k: v for k, v in meta.items() if k in META_TEXT},
               "slots": {n: {"feetY": s.get("feetY"), "h": s.get("h"), "w": s.get("w")} for n, s in slots.items()}}
         sj["version"] = sj["version"] or "1.0.0"
+        if isinstance(m.get("body"), int) and m["body"] != 900:
+            sj["body"] = m["body"]                     # how big the figure is in the pictures (see "body" in the manifest)
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as z:       # webp is already compressed
             z.writestr("series.json", json.dumps(sj, indent=1))
@@ -294,6 +296,7 @@ class SetLibrary:
         if not exists:
             self._check_room()
         given = meta_in.get("slots") if isinstance(meta_in.get("slots"), dict) else {}
+        body = meta_in.get("body") if isinstance(meta_in.get("body"), int) and not isinstance(meta_in.get("body"), bool) and 300 <= meta_in["body"] <= 3000 else None
         tmp = self.root / f"series-{sid}.tmp-{int(time.time())}"
         slots, skipped, made = {}, 0, None
         unknown = []                            # pictures whose name matches no weather cell, music cell or event: they are not installed
@@ -343,10 +346,10 @@ class SetLibrary:
                 if backup:
                     made = self.backup_create(sid, f"before updating the set “{self.meta(sid)['name']}”")   # a failure stops here: nothing deleted
                 meta["created"] = self.meta(sid).get("created") or int(time.time())
-                self.lib(sid).replace_all(tmp, slots)
+                self.lib(sid).replace_all(tmp, slots, body)
             else:
                 (self.dir / sid).mkdir(parents=True)
-                ImageLibrary(self.dir / sid).replace_all(tmp, slots)
+                ImageLibrary(self.dir / sid).replace_all(tmp, slots, body)
             self._write_meta(sid, meta)
             if prompts_in is not None:             # a series without prompts keeps the prompts the set already had
                 self.prompts_set(sid, prompts_in)
