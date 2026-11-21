@@ -54,26 +54,107 @@ class AvatarWeatherPanel extends HTMLElement {
     const make = () => {
       const d = document.createElement("dialog");
       d.className = "lb";
-      d.innerHTML = '<figure><div class="lbstage"><button type="button" class="s lbnav lbprev" aria-label="Previous">\u2039</button><img alt="">' +
+      d.innerHTML = '<figure><div class="lbstage"><img alt="" draggable="false">' +
+        '<button type="button" class="s lbnav lbprev" aria-label="Previous">\u2039</button>' +
         '<button type="button" class="s lbnav lbnext" aria-label="Next">\u203a</button></div>' +
-        '<figcaption><code></code><span class="lbcount"></span><button type="button" class="s lbclose" aria-label="Close">\u2715</button></figcaption></figure>';
+        '<div class="lbed" hidden></div><figcaption><code></code><span class="lbcount"></span><span class="lbtools">' +
+        '<button type="button" class="s lbzo" aria-label="Zoom out" title="Zoom out (-)">\u2212</button>' +
+        '<button type="button" class="s lbz1" aria-label="Fit" title="Fit (0)">100%</button>' +
+        '<button type="button" class="s lbzi" aria-label="Zoom in" title="Zoom in (+)">+</button>' +
+        '<button type="button" class="s lbbg" title="Make the background transparent / change it">Transparency\u2026</button>' +
+        '<button type="button" class="s lbdel" title="Delete this picture">Delete</button>' +
+        '<button type="button" class="s lbclose" aria-label="Close">\u2715</button></span></figcaption></figure>';
       root.appendChild(d);
+      const big = d.querySelector(".lbstage img"), stage = d.querySelector(".lbstage");
+      // zoom: this._z = {s: scale, x, y: shift in px}; wheel / pinch zoom around the pointer, drag moves a zoomed picture, double click toggles
+      const z = (this._z = { s: 1, x: 0, y: 0 });
+      const apply = () => {
+        if (z.s <= 1.001) { z.s = 1; z.x = 0; z.y = 0; }
+        else { const w = (big.clientWidth * z.s - stage.clientWidth) / 2, h = (big.clientHeight * z.s - stage.clientHeight) / 2;
+          z.x = Math.max(-Math.max(w, 0) - 40, Math.min(Math.max(w, 0) + 40, z.x)); z.y = Math.max(-Math.max(h, 0) - 40, Math.min(Math.max(h, 0) + 40, z.y)); }
+        big.style.transform = z.s === 1 ? "" : `translate(${z.x}px, ${z.y}px) scale(${z.s})`;
+        big.style.cursor = z.s > 1 ? "grab" : "zoom-in";
+        d.querySelector(".lbz1").textContent = Math.round(z.s * 100) + "%";
+      };
+      this._lbZoomReset = () => { z.s = 1; z.x = 0; z.y = 0; apply(); };
+      const zoomAt = (f, cx, cy) => {   // keep the point under (cx, cy) fixed
+        const r = stage.getBoundingClientRect(), px = cx - (r.left + r.width / 2), py = cy - (r.top + r.height / 2);
+        const s2 = Math.max(1, Math.min(8, z.s * f)), k = s2 / z.s;
+        z.x = px - (px - z.x) * k; z.y = py - (py - z.y) * k; z.s = s2; apply();
+      };
+      const zoomMid = (f) => { const r = stage.getBoundingClientRect(); zoomAt(f, r.left + r.width / 2, r.top + r.height / 2); };
+      stage.addEventListener("wheel", (e) => { e.preventDefault(); zoomAt(e.deltaY < 0 ? 1.2 : 1 / 1.2, e.clientX, e.clientY); }, { passive: false });
+      big.addEventListener("dblclick", (e) => { if (z.s > 1) this._lbZoomReset(); else zoomAt(2.5, e.clientX, e.clientY); });
+      const ptr = new Map(); let pinch = 0, moved = false;
+      stage.addEventListener("pointerdown", (e) => {
+        if (e.target.closest(".lbnav")) return;
+        ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); moved = false;
+        if (ptr.size === 2) { const [a, b] = [...ptr.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); }
+        try { stage.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+      });
+      stage.addEventListener("pointermove", (e) => {
+        const o = ptr.get(e.pointerId); if (!o) return;
+        if (ptr.size === 2) {
+          ptr.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          const [a, b] = [...ptr.values()], dist = Math.hypot(a.x - b.x, a.y - b.y);
+          if (pinch) zoomAt(dist / pinch, (a.x + b.x) / 2, (a.y + b.y) / 2);
+          pinch = dist; moved = true; return;
+        }
+        const dx = e.clientX - o.x, dy = e.clientY - o.y; ptr.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (z.s > 1 && (dx || dy)) { z.x += dx; z.y += dy; moved = true; apply(); }
+      });
+      const up = (e) => { ptr.delete(e.pointerId); pinch = 0; };
+      stage.addEventListener("pointerup", up); stage.addEventListener("pointercancel", up);
+      // swipe to change picture (only when not zoomed)
       let x0 = null;
-      d.addEventListener("click", (e) => {
+      d.addEventListener("touchstart", (e) => { x0 = e.touches.length === 1 && z.s === 1 ? e.touches[0].clientX : null; }, { passive: true });
+      d.addEventListener("touchend", (e) => {
+        if (x0 === null || e.changedTouches.length !== 1) return; const dx = e.changedTouches[0].clientX - x0; x0 = null;
+        if (Math.abs(dx) > 50 && z.s === 1) this._lbShow(this._lbAt + (dx < 0 ? 1 : -1));
+      });
+      d.addEventListener("click", async (e) => {
         if (e.target.closest(".lbprev")) this._lbShow(this._lbAt - 1);
         else if (e.target.closest(".lbnext")) this._lbShow(this._lbAt + 1);
+        else if (e.target.closest(".lbzi")) zoomMid(1.4);
+        else if (e.target.closest(".lbzo")) zoomMid(1 / 1.4);
+        else if (e.target.closest(".lbz1")) this._lbZoomReset();
+        else if (e.target.closest(".lbdel")) this._lbDelete();
+        else if (e.target.closest(".lbbg")) this._lbEdit();
         else if (e.target === d || e.target.closest(".lbclose")) d.close();
       });
       d.addEventListener("keydown", (e) => {
+        if (d.classList.contains("ed")) return;   // sliders and colour field of the transparency editor use the keys
         if (e.key === "ArrowRight") { e.preventDefault(); this._lbShow(this._lbAt + 1); }
         else if (e.key === "ArrowLeft") { e.preventDefault(); this._lbShow(this._lbAt - 1); }
-      });
-      d.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; }, { passive: true });
-      d.addEventListener("touchend", (e) => {
-        if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null;
-        if (Math.abs(dx) > 50) this._lbShow(this._lbAt + (dx < 0 ? 1 : -1));
+        else if (e.key === "+" || e.key === "=") { e.preventDefault(); zoomMid(1.4); }
+        else if (e.key === "-") { e.preventDefault(); zoomMid(1 / 1.4); }
+        else if (e.key === "0") { e.preventDefault(); this._lbZoomReset(); }
       });
       return d;
+    };
+    // what image_delete needs: the set and the picture name, only for pictures of the set shown in the Images tab
+    const delOf = (src) => {
+      if (this._tab !== "images") return null;
+      const m = /\/avatar_weather_card_images\/(?:([^\/?#]+)\/)?([^\/?#]+)\.webp(?:[?#]|$)/.exec(src || "");
+      return m ? { set: m[1] ? decodeURIComponent(m[1]) : "", name: decodeURIComponent(m[2]) } : null;
+    };
+    this._lbDelete = async () => {
+      const it = this._lbSeq[this._lbAt]; if (!it || !it.del) return;
+      if (!confirm(`Delete ${it.name}? The picture is removed from the set for good.`)) return;
+      try { await this._hass.callWS({ type: "avatar_weather_card/image_delete", name: it.del.name, set: it.del.set }); }
+      catch (e) { alert("Cannot delete: " + (e.message || e)); return; }
+      this._lbSeq.splice(this._lbAt, 1);
+      if (!this._lbSeq.length) this._lbDlg.close(); else { this._lbDlg.classList.toggle("single", this._lbSeq.length < 2); this._lbShow(Math.min(this._lbAt, this._lbSeq.length - 1)); }
+      this._renderImages();
+    };
+    // transparency editor inside the pop-up: hides the picture while open; after Save the picture is shown again, new version
+    this._lbEdit = () => {
+      const d = this._lbDlg, it = this._lbSeq[this._lbAt]; if (!it || !it.del || !this._openBgIn) return;
+      const host = d.querySelector(".lbed"); host.hidden = false; d.classList.add("ed");
+      this._openBgIn(it.del.name, host, (how) => {
+        d.classList.remove("ed"); host.hidden = true;
+        if (how === "saved") { it.src = it.src.split("?")[0] + "?v=" + Date.now(); this._lbShow(this._lbAt); }
+      });
     };
     this._lbShow = (i) => {
       const d = this._lbDlg, n = this._lbSeq.length;
@@ -81,6 +162,10 @@ class AvatarWeatherPanel extends HTMLElement {
       const it = this._lbSeq[this._lbAt];
       const big = d.querySelector(".lbstage img");
       big.removeAttribute("src"); big.src = it.src; big.alt = it.name;
+      if (this._lbZoomReset) this._lbZoomReset();
+      d.classList.remove("ed"); d.querySelector(".lbed").hidden = true; d.querySelector(".lbed").innerHTML = "";
+      d.querySelector(".lbbg").hidden = !(it.del && this._openBgIn && ((this._lib && this._lib.slots[it.del.name]) || {}).orig);
+      d.querySelector(".lbdel").hidden = !it.del;   // only a picture of the set being edited in the Images tab can be deleted
       d.querySelector("code").textContent = it.name;
       d.querySelector(".lbcount").textContent = n > 1 ? `${this._lbAt + 1} / ${n}` : "";
     };
@@ -92,11 +177,11 @@ class AvatarWeatherPanel extends HTMLElement {
       root.querySelectorAll(IMG).forEach((im) => {
         if (this._lbDlg.contains(im) || im.closest("[hidden]")) return;
         const src = im.getAttribute("src"), key = src.split("?")[0];
-        if (!seen[key]) { seen[key] = 1; seq.push({ src, name: nameOf(src) }); }
+        if (!seen[key]) { seen[key] = 1; seq.push({ src, name: nameOf(src), del: delOf(src) }); }
       });
       const at = img.getAttribute("src"), k = at.split("?")[0];
       let i = seq.findIndex((x) => x.src.split("?")[0] === k);
-      if (i < 0) { seq.unshift({ src: at, name: nameOf(at) }); i = 0; }
+      if (i < 0) { seq.unshift({ src: at, name: nameOf(at), del: delOf(at) }); i = 0; }
       this._lbSeq = seq;
       this._lbDlg.classList.toggle("single", seq.length < 2);
       this._lbShow(i);
@@ -146,12 +231,13 @@ class AvatarWeatherPanel extends HTMLElement {
         img[src*="/avatar_weather_card_images/"], img[src*="/avatar_weather_card_reference/"] { cursor:zoom-in }
         dialog.lb { border:0; padding:0; background:transparent; max-width:100vw; max-height:100vh; color:var(--primary-text-color) }
         dialog.lb::backdrop { background:rgba(10,14,20,.78) }
-        dialog.lb figure { margin:0; background:var(--card-background-color,#fff); border:1px solid var(--divider-color); border-radius:10px; padding:14px }
-        dialog.lb .lbstage { position:relative }
-        dialog.lb img { display:block; max-width:calc(100vw - 64px); max-height:calc(100vh - 110px); width:auto; height:auto; margin:0 auto; cursor:default; border-radius:6px;
+        dialog.lb figure { max-height:calc(100vh - 16px); overflow:auto; margin:0; background:var(--card-background-color,#fff); border:1px solid var(--divider-color); border-radius:10px; padding:14px }
+        dialog.lb .lbstage { position:relative; overflow:hidden; border-radius:6px; touch-action:none; user-select:none }
+        dialog.lb img { display:block; max-width:calc(100vw - 64px); max-height:calc(100vh - 110px); width:auto; height:auto; margin:0 auto; cursor:zoom-in; border-radius:6px; transform-origin:center; will-change:transform;
                 background:repeating-conic-gradient(#8883 0 25%, transparent 0 50%) 50%/18px 18px }
         dialog.lb figcaption { display:flex; align-items:center; gap:12px; margin-top:10px } dialog.lb code { font-size:13px; overflow-wrap:anywhere }
-        dialog.lb .lbclose { margin-left:auto; padding:4px 11px } dialog.lb .lbcount { opacity:.7; font-size:13px; white-space:nowrap }
+        dialog.lb .lbtools { margin-left:auto; display:flex; gap:6px; align-items:center } dialog.lb .lbtools button { padding:4px 11px; min-width:34px } dialog.lb .lbz1 { min-width:58px !important }
+        dialog.lb .lbdel { color:var(--error-color,#db4437); border-color:var(--error-color,#db4437) } dialog.lb [hidden] { display:none } dialog.lb.ed .lbstage, dialog.lb.ed .lbtools button:not(.lbclose) { display:none } dialog.lb .lbed { width:min(860px, calc(100vw - 64px)) } dialog.lb .lbcount { opacity:.7; font-size:13px; white-space:nowrap }
         dialog.lb .lbnav { position:absolute; top:50%; transform:translateY(-50%); width:44px; height:64px; padding:0 0 4px; font-size:34px; line-height:1; border-radius:10px;
                 background:color-mix(in srgb, var(--card-background-color,#fff) 82%, transparent); color:var(--primary-text-color); border:1px solid var(--divider-color) }
         dialog.lb .lbprev { left:0 } dialog.lb .lbnext { right:0 } dialog.lb.single .lbnav { display:none }
@@ -592,7 +678,6 @@ class AvatarWeatherPanel extends HTMLElement {
         <b>Drop or paste (Ctrl+V) pictures</b> on a cell or anywhere on this page: they are named automatically after the selected cell (a second picture for the same cell becomes an alternative, <code>_2</code>, <code>_3</code>…).
         A file already named like a slot (<code>mild_rain_afternoon.png</code>) keeps its name and replaces that picture.</p>
       <p class="h">Tap a cell to see its prompt, ready to copy into your image generator: the shared sections (Prompts tab) plus the cell's own scene, which you can edit there. ${pr.custom ? "This set has its own prompt file." : "This set uses the built-in prompts."}</p>
-      <div class="drop" id="idrop">Drop pictures here or <input type="file" id="ifile" multiple accept="image/png,image/webp"></div>
       <div class="log" id="ilog"></div>
       ${SECTIONS.map(secHtml).join("")}`;
     const log = r.getElementById("ilog"), say = (t, bad) => { const d = document.createElement("div"); d.textContent = t; if (bad) d.className = "err"; log.appendChild(d); };
@@ -659,11 +744,10 @@ class AvatarWeatherPanel extends HTMLElement {
       const t = dropTarget(e), files = [...e.dataTransfer.files];
       if (t) send(files, t.dataset.n || (st.sel && st.sel.nm), t.closest("[data-sec]") ? t.closest("[data-sec]").dataset.sec : null); else send(files, null, null);
     };
-    r.getElementById("ifile").onchange = (e) => { send([...e.target.files], null, null); e.target.value = ""; };
 
     // ---- background editor: original and result side by side, colour / tolerance / gap size, saved as a new transparent picture
-    const openBg = async (n) => {
-      const host = r.querySelector("#bged"); if (!host) return;
+    const openBg = async (n, hostEl, done) => {
+      const host = hostEl || r.querySelector("#bged"); if (!host) return;
       host.innerHTML = `<p class="h">Loading…</p>`;
       let orig;
       try {
@@ -697,7 +781,7 @@ class AvatarWeatherPanel extends HTMLElement {
       q("bgh").oninput = (e) => { hole = +e.target.value; draw(); };
       q("bgauto").onclick = () => { col = det.color; draw(); };
       co.onclick = (e) => { const b = co.getBoundingClientRect(), x = Math.min(px.w - 1, Math.max(0, Math.floor((e.clientX - b.left) * px.w / b.width))), y = Math.min(px.h - 1, Math.max(0, Math.floor((e.clientY - b.top) * px.h / b.height))), i = (y * px.w + x) * 4; col = [px.data[i], px.data[i + 1], px.data[i + 2]]; draw(); };
-      q("bgclose").onclick = () => { clearTimeout(timer); host.innerHTML = ""; };
+      q("bgclose").onclick = () => { clearTimeout(timer); host.innerHTML = ""; if (done) done("close"); };
       q("bgsave").onclick = async () => {
         const m = q("bgmsg"); m.className = ""; m.textContent = "Saving…";
         try {
@@ -707,10 +791,13 @@ class AvatarWeatherPanel extends HTMLElement {
           const resp = await fetch("/api/avatar_weather_card/upload", { method: "POST", headers: { Authorization: `Bearer ${this._hass.auth.data.access_token}` }, body: fd });
           const j = await resp.json(); if (!resp.ok) throw new Error(j.message || `HTTP ${resp.status}`);
           this._renderImages();
+          if (done) { clearTimeout(timer); host.innerHTML = ""; done("saved"); }
         } catch (e) { m.className = "err"; m.textContent = e.message || "Error"; }
       };
       draw();
     };
+
+    this._openBgIn = openBg;   // used by the picture pop-up
 
     // ---- the panel of the selected cell
     const showPanel = () => {
