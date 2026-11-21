@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2 (2026-11-21)
+- Images tab: the "Drop pictures here" box is gone (drop on a cell and Ctrl+V still work).
+- Picture pop-up: zoom (wheel, pinch, double click, − / + buttons, keys + - 0) with drag to move, a *Delete* button, and *Transparency…* that opens the background editor inside the pop-up.
+- Background editor: zoom (wheel, pinch, buttons) and drag; the original and the result move together, and the colour can be picked on the zoomed picture.
+- Images tab, Special days: the weekdays/weekend switch is gone (those pictures have no weekend variant).
+- Picture sets can carry a figure size: optional `body` (300-3000, default 900) in `series.json`, kept by export and applied on install, so a set with smaller figures is shown as big as the others.
+
 ## 0.3.1 (2026-11-20)
 First public version (beta).
 - Home Assistant integration with an admin panel in the sidebar (settings, images, prompts).

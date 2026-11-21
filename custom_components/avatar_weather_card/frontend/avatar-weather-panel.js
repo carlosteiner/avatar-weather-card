@@ -1,8 +1,8 @@
 // Avatar Weather Card - admin panel: settings, prompts, images.
-import { SHARED, parsePrompts, serializePrompts, assemble, sceneOf, baseName, DEFAULT_URL, GUIDE_URL } from "./prompts.js?v=0.3.1-2";
-import { detectColor, isOpaque, cutBackground, hex, rgb } from "./bgcut.js?v=0.3.1";
-import { createSelector, aggregateWeather, solarMoment, sunriseMinutes, MUSIC_TEMPS } from "./selector.js?v=0.3.1";
-const VER = "0.3.1";
+import { SHARED, parsePrompts, serializePrompts, assemble, sceneOf, baseName, DEFAULT_URL, GUIDE_URL } from "./prompts.js?v=0.3.2-2";
+import { detectColor, isOpaque, cutBackground, hex, rgb } from "./bgcut.js?v=0.3.2";
+import { createSelector, aggregateWeather, solarMoment, sunriseMinutes, MUSIC_TEMPS } from "./selector.js?v=0.3.2";
+const VER = "0.3.2";
 // The cells of the Images grid (2026-11-08 reduction): 5 temperatures x 4 skies x 5 moments, snow only when cold, no cloudy at night,
 // the same cells on the weekend; music: 3 temperatures x 5 moments x weekday/weekend; special days: <id>_<moment>.
 // The finer names (freezing, heatwave, fog, wind, storm, hail, sleet, snowstorm, midday, goldenhour, lateevening) are still valid
@@ -662,7 +662,7 @@ class AvatarWeatherPanel extends HTMLElement {
       if (open) {
         inner = `<p class="gintro">${INTRO[s.key] || (s.kind === "band" ? "Pictures for this time of day. Where a cell has no picture of its own, the closest one is used." : "")}</p>
           <details class="cov" open><summary>What comes out, by ${s.kind === "events" ? "day and time" : s.kind === "music" ? "temperature and time" : "temperature and weather"}</summary>
-            <div class="covmode"><button type="button" data-mode="d" data-sec="${s.key}" aria-pressed="${!wk}">Weekdays</button><button type="button" data-mode="w" data-sec="${s.key}" aria-pressed="${wk}">Weekend</button></div>
+            ${s.kind === "events" ? "" : `<div class="covmode"><button type="button" data-mode="d" data-sec="${s.key}" aria-pressed="${!wk}">Weekdays</button><button type="button" data-mode="w" data-sec="${s.key}" aria-pressed="${wk}">Weekend</button></div>`}
             <div class="covlegend"><span><i class="q0"></i>exact</span><span><i class="q1"></i>good</span><span><i class="q2"></i>fallback</span><span><i class="q3"></i>weak fallback</span><span><i class="q4"></i>nothing</span></div>
             <div class="covwrap">${gridFor(s)}</div><p class="covinfo">Tap a cell to see what comes out and to add or replace its picture.</p>
             <div class="covpanel" data-sec="${s.key}" ${st.sel && st.sel.sec === s.key ? "" : "hidden"}></div></details>
@@ -761,9 +761,10 @@ class AvatarWeatherPanel extends HTMLElement {
       host.innerHTML = `<div style="margin:10px 0;padding:10px 12px;border:1px solid var(--divider-color);border-radius:10px">
         <b>Background of <code>${esc(n)}</code></b>
         <div style="display:flex;gap:14px;flex-wrap:wrap;margin:8px 0">
-          <div><div class="h">Original: click to pick the colour</div><canvas id="bgo" style="height:300px;max-width:100%;cursor:crosshair;border-radius:6px"></canvas></div>
-          <div><div class="h">Result</div><canvas id="bgr" style="height:300px;max-width:100%;border-radius:6px;background:${checker}"></canvas></div>
+          <div><div class="h">Original: click to pick the colour</div><div class="bgv" style="overflow:hidden;border-radius:6px;line-height:0;touch-action:none"><canvas id="bgo" style="height:300px;max-width:100%;cursor:crosshair"></canvas></div></div>
+          <div><div class="h">Result</div><div class="bgv" style="overflow:hidden;border-radius:6px;line-height:0;touch-action:none"><canvas id="bgr" style="height:300px;max-width:100%;background:${checker}"></canvas></div></div>
         </div>
+        <p style="margin:6px 0">Zoom <button class="s" id="bgzo" type="button" title="Zoom out">\u2212</button> <button class="s" id="bgz1" type="button" title="Back to the whole picture" style="min-width:56px">100%</button> <button class="s" id="bgzi" type="button" title="Zoom in">+</button> <span class="h">mouse wheel or pinch to zoom, drag to move: both pictures move together</span></p>
         <p style="margin:6px 0">Colour <input type="color" id="bgc"> <code id="bgch"></code> <button class="s" id="bgauto" type="button">Detect</button></p>
         <p style="margin:6px 0">Tolerance <input type="range" id="bgt" min="0" max="100" style="vertical-align:middle;width:200px"> <b id="bgtv"></b> <span class="h">how close to the colour still counts as background</span></p>
         <p style="margin:6px 0">Gap size <input type="range" id="bgh" min="0" max="100" style="vertical-align:middle;width:200px"> <b id="bghv"></b> <span class="h">smallest closed gap (between legs, arms) that is removed; 0 = all</span></p>
@@ -776,11 +777,39 @@ class AvatarWeatherPanel extends HTMLElement {
         clearTimeout(timer);
         timer = setTimeout(() => { last = cutBackground(px.data, px.w, px.h, col, tol, hole); cr.getContext("2d").putImageData(new ImageData(last.data, px.w, px.h), 0, 0); q("bgwarn").hidden = !last.ground; }, 40);
       };
+      // zoom: one shared state for both pictures, so the original and the result always show the same part
+      const bz = { s: 1, x: 0, y: 0 }, vps = [...host.querySelectorAll(".bgv")], cvs = [co, cr]; let dragged = false;
+      const bzApply = () => {
+        const w = cr.offsetWidth, h = cr.offsetHeight;
+        if (bz.s <= 1.001) { bz.s = 1; bz.x = 0; bz.y = 0; } else { const mx = (w * bz.s - w) / 2, my = (h * bz.s - h) / 2; bz.x = Math.max(-mx, Math.min(mx, bz.x)); bz.y = Math.max(-my, Math.min(my, bz.y)); }
+        cvs.forEach((c) => { c.style.transformOrigin = "center"; c.style.transform = bz.s === 1 ? "" : `translate(${bz.x}px, ${bz.y}px) scale(${bz.s})`; });
+        q("bgz1").textContent = Math.round(bz.s * 100) + "%";
+      };
+      const bzAt = (f, cx, cy, vp) => {
+        const b = vp.getBoundingClientRect(), px = cx - (b.left + b.width / 2), py = cy - (b.top + b.height / 2), s2 = Math.max(1, Math.min(10, bz.s * f)), k = s2 / bz.s;
+        bz.x = px - (px - bz.x) * k; bz.y = py - (py - bz.y) * k; bz.s = s2; bzApply();
+      };
+      const bzMid = (f) => { const b = vps[0].getBoundingClientRect(); bzAt(f, b.left + b.width / 2, b.top + b.height / 2, vps[0]); };
+      q("bgzi").onclick = () => bzMid(1.5); q("bgzo").onclick = () => bzMid(1 / 1.5); q("bgz1").onclick = () => { bz.s = 1; bzApply(); };
+      const ptr = new Map(); let pinch = 0;
+      vps.forEach((vp) => {
+        vp.addEventListener("wheel", (e) => { e.preventDefault(); bzAt(e.deltaY < 0 ? 1.25 : 1 / 1.25, e.clientX, e.clientY, vp); }, { passive: false });
+        vp.addEventListener("pointerdown", (e) => { ptr.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY }); dragged = false; if (ptr.size === 2) { const [a, b] = [...ptr.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); } });
+        vp.addEventListener("pointermove", (e) => {
+          const o = ptr.get(e.pointerId); if (!o) return;
+          if (ptr.size === 2) { o.x = e.clientX; o.y = e.clientY; const [a, b] = [...ptr.values()], d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch) bzAt(d / pinch, (a.x + b.x) / 2, (a.y + b.y) / 2, vp); pinch = d; dragged = true; return; }
+          const dx = e.clientX - o.x, dy = e.clientY - o.y; o.x = e.clientX; o.y = e.clientY;
+          if (Math.hypot(e.clientX - o.x0, e.clientY - o.y0) > 4) dragged = true;
+          if (bz.s > 1 && dragged) { bz.x += dx; bz.y += dy; bzApply(); try { vp.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ } }
+        });
+        const up = (e) => { ptr.delete(e.pointerId); pinch = 0; setTimeout(() => { dragged = false; }, 0); };
+        vp.addEventListener("pointerup", up); vp.addEventListener("pointercancel", up);
+      });
       q("bgc").oninput = (e) => { col = rgb(e.target.value) || col; draw(); };
       q("bgt").oninput = (e) => { tol = +e.target.value; draw(); };
       q("bgh").oninput = (e) => { hole = +e.target.value; draw(); };
       q("bgauto").onclick = () => { col = det.color; draw(); };
-      co.onclick = (e) => { const b = co.getBoundingClientRect(), x = Math.min(px.w - 1, Math.max(0, Math.floor((e.clientX - b.left) * px.w / b.width))), y = Math.min(px.h - 1, Math.max(0, Math.floor((e.clientY - b.top) * px.h / b.height))), i = (y * px.w + x) * 4; col = [px.data[i], px.data[i + 1], px.data[i + 2]]; draw(); };
+      co.onclick = (e) => { if (dragged) return; const b = co.getBoundingClientRect(), x = Math.min(px.w - 1, Math.max(0, Math.floor((e.clientX - b.left) * px.w / b.width))), y = Math.min(px.h - 1, Math.max(0, Math.floor((e.clientY - b.top) * px.h / b.height))), i = (y * px.w + x) * 4; col = [px.data[i], px.data[i + 1], px.data[i + 2]]; draw(); };
       q("bgclose").onclick = () => { clearTimeout(timer); host.innerHTML = ""; if (done) done("close"); };
       q("bgsave").onclick = async () => {
         const m = q("bgmsg"); m.className = ""; m.textContent = "Saving…";

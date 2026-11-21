@@ -19,7 +19,7 @@ from .views import BackupDownloadView, OriginalView, ReferenceUploadView, SetExp
 _LOGGER = logging.getLogger(__name__)
 # Cache-busting token for the frontend files (panel, card and the modules they import): change it whenever a frontend file changes,
 # and the same token in the import lines of avatar-weather-card.js and avatar-weather-panel.js.
-VERSION = "0.3.1"
+VERSION = "0.3.2"
 
 
 async def _ensure_active(hass: HomeAssistant, store, sets: SetLibrary) -> None:
