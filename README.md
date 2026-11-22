@@ -2,9 +2,15 @@
 
 A Home Assistant integration and Lovelace card that shows **an avatar dressed for the weather**: it changes outfit with the temperature, the sky, the time of day, weekends, holidays and special days, on a living sky background (sun, moon, stars, clouds, rain, snow, fog, lightning). A music view takes over while a media player plays.
 
+[![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=carlosteiner&repository=avatar-weather-card&category=integration)
+[![Validate](https://github.com/carlosteiner/avatar-weather-card/actions/workflows/validate.yml/badge.svg)](https://github.com/carlosteiner/avatar-weather-card/actions/workflows/validate.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+![The card through the day: sun, clouds, rain, snow, night and the music view](docs/img/demo.webp)
+
 ![The card in four moments: a sunny afternoon, rain, snow and a clear night](docs/img/hero.webp)
 
-> **Status: beta (0.3.2).** It works, but expect rough edges.
+> Version 0.3.2, in active development. Bug reports and ideas are welcome in the [issues](https://github.com/carlosteiner/avatar-weather-card/issues).
 
 ## What you get
 - A sidebar **panel** to set everything up: weather sources, thresholds, times of day, holidays, special days, the pictures and the prompts to make them.
@@ -28,6 +34,8 @@ While a media player plays, the card turns into a music view: cover, track, prog
 
 ## Installation
 ### HACS (custom repository)
+One click: use the *Open in HACS* button at the top, or add it by hand:
+
 1. HACS → ⋮ → *Custom repositories* → add this repository, category *Integration*.
 2. Install **Avatar Weather Card** and restart Home Assistant.
 3. Settings → Devices & services → *Add integration* → **Avatar Weather Card**.
