@@ -767,7 +767,7 @@ class AvatarWeatherPanel extends HTMLElement {
         <p style="margin:6px 0">Zoom <button class="s" id="bgzo" type="button" title="Zoom out">\u2212</button> <button class="s" id="bgz1" type="button" title="Back to the whole picture" style="min-width:56px">100%</button> <button class="s" id="bgzi" type="button" title="Zoom in">+</button> <span class="h">mouse wheel or pinch to zoom, drag to move: both pictures move together</span></p>
         <p style="margin:6px 0">Colour <input type="color" id="bgc"> <code id="bgch"></code> <button class="s" id="bgauto" type="button">Detect</button></p>
         <p style="margin:6px 0">Tolerance <input type="range" id="bgt" min="0" max="100" style="vertical-align:middle;width:200px"> <b id="bgtv"></b> <span class="h">how close to the colour still counts as background</span></p>
-        <p style="margin:6px 0">Gap size <input type="range" id="bgh" min="0" max="100" style="vertical-align:middle;width:200px"> <b id="bghv"></b> <span class="h">smallest closed gap (between legs, arms) that is removed; 0 = all</span></p>
+        <p style="margin:6px 0">Gap size <input type="range" id="bgh" min="0" max="100" style="vertical-align:middle;width:200px"> <b id="bghv"></b> <span class="h">how wide a closed gap (between legs, arms) must be to be removed; 0 = all</span></p>
         <p class="err" id="bgwarn" hidden>The ground reaches both sides of the picture: it will not be centred. Crop it to a small patch under the feet.</p>
         <p style="margin:8px 0 0"><button id="bgsave" type="button">Save</button> <button class="s" id="bgclose" type="button">Close</button><span id="bgmsg" style="margin-left:10px"></span></p></div>`;
       const q = (id) => host.querySelector("#" + id), co = q("bgo"), cr = q("bgr");

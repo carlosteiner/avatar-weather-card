@@ -25,11 +25,33 @@ export function isOpaque(d) {
 export const hex = (c) => "#" + c.map((v) => v.toString(16).padStart(2, "0")).join("");
 export const rgb = (s) => { const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(s || ""); return m ? [1, 2, 3].map((i) => parseInt(m[i], 16)) : null; };
 
+/** For every pixel of the mask, the distance in pixels to the nearest pixel outside the mask (chamfer 3-4 approximation). */
+function thickness(m, w, h) {
+  const n = w * h, d = new Float32Array(n), A = 1, B = 1.4142;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const p = y * w + x;
+    if (!m[p]) { d[p] = 0; continue; }
+    let v = 1e9;
+    v = Math.min(v, x > 0 ? d[p - 1] + A : A, y > 0 ? d[p - w] + A : A);
+    v = Math.min(v, x > 0 && y > 0 ? d[p - w - 1] + B : B, x < w - 1 && y > 0 ? d[p - w + 1] + B : B);
+    d[p] = v;
+  }
+  for (let y = h - 1; y >= 0; y--) for (let x = w - 1; x >= 0; x--) {
+    const p = y * w + x;
+    if (!m[p]) continue;
+    let v = d[p];
+    v = Math.min(v, x < w - 1 ? d[p + 1] + A : A, y < h - 1 ? d[p + w] + A : A);
+    v = Math.min(v, x < w - 1 && y < h - 1 ? d[p + w + 1] + B : B, x > 0 && y < h - 1 ? d[p + w - 1] + B : B);
+    d[p] = v;
+  }
+  return d;
+}
+
 /**
  * @param src   RGBA pixels (Uint8ClampedArray) of the picture with its background
  * @param color [r, g, b] of the background
  * @param tol   0..100 (50 = default): how far from the colour a pixel may be and still count as background
- * @param hole  0..100 (15 = default): the smallest closed gap that is removed (0 = every gap, 100 = only huge ones)
+ * @param hole  0..100 (15 = default): how thick a closed gap must be to be removed (0 = every gap, 100 = only wide ones)
  * @returns {data, ground}: RGBA pixels with the new alpha; ground = true when the ground reaches both sides of the picture
  */
 export function cutBackground(src, w, h, color, tol, hole) {
@@ -51,18 +73,23 @@ export function cutBackground(src, w, h, color, tol, hole) {
     if (p >= w) seed(p - w);
     if (p < n - w) seed(p + w);
   }
-  // 2. closed gaps: clearly background-coloured regions, not connected to the edge, at least `hole` big
-  const minHole = hole <= 0 ? 1 : Math.max(1, Math.round(hole * 0.00002 * n));
+  // 2. closed gaps: clearly background-coloured regions, not connected to the edge. A gap is removed when it is thick enough:
+  //    the radius of the largest circle that fits inside it is at least `hole` (a fraction of the picture size, so it does not
+  //    depend on the resolution). A thin slit is kept, a wide opening between the legs goes.
+  const cand = new Uint8Array(n);
+  for (let p = 0; p < n; p++) cand[p] = !gone[p] && dist[p] < lo ? 1 : 0;
+  const dt = thickness(cand, w, h);
+  const minR = hole <= 0 ? 0 : Math.max(1, hole * 0.00065 * Math.sqrt(n));
   const seen = new Uint8Array(n), comp = new Int32Array(n);
   for (let s = 0; s < n; s++) {
-    if (seen[s] || gone[s] || dist[s] >= lo) continue;
-    let cs = 0; sp = 0; stack[sp++] = s; seen[s] = 1;
+    if (seen[s] || !cand[s]) continue;
+    let cs = 0, best = 0; sp = 0; stack[sp++] = s; seen[s] = 1;
     while (sp) {
-      const p = stack[--sp]; comp[cs++] = p;
+      const p = stack[--sp]; comp[cs++] = p; if (dt[p] > best) best = dt[p];
       const x = p % w, nb = [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, p >= w ? p - w : -1, p < n - w ? p + w : -1];
-      for (const q of nb) if (q >= 0 && !seen[q] && !gone[q] && dist[q] < lo) { seen[q] = 1; stack[sp++] = q; }
+      for (const q of nb) if (q >= 0 && !seen[q] && cand[q]) { seen[q] = 1; stack[sp++] = q; }
     }
-    if (cs >= minHole) for (let j = 0; j < cs; j++) gone[comp[j]] = 1;
+    if (best >= minR) for (let j = 0; j < cs; j++) gone[comp[j]] = 1;
   }
   // 3. the soft edge only exists next to the removed area: dilate it by 2 pixels
   const hz = new Uint8Array(n), zone = new Uint8Array(n);
