@@ -22,12 +22,14 @@ DEFAULTS = {
         "weekend_looks": True,
         "rotate_minutes": 60,
         "moments": {"EARLYMORNING": "05:00", "MORNING": "08:30", "MIDDAY": "12:00",
-                    "AFTERNOON": "15:00", "LATEEVENING": "22:00", "NIGHT": "01:00"},
+                    "AFTERNOON": "15:00", "EVENING": "18:00", "LATEEVENING": "22:00", "NIGHT": "01:00"},
         "free_moments_enabled": False,   # different times on weekends and holidays
         "moments_free": {"EARLYMORNING": "05:00", "MORNING": "08:30", "MIDDAY": "12:00",
-                         "AFTERNOON": "15:00", "LATEEVENING": "22:00", "NIGHT": "01:00"},
+                         "AFTERNOON": "15:00", "EVENING": "18:00", "LATEEVENING": "22:00", "NIGHT": "01:00"},
         "follow_dawn": False,            # morning starts at sunrise (+ offset) instead of the fixed time
         "dawn_offset": 0,
+        "follow_dusk": True,             # evening starts at sunset (+ offset) instead of the fixed EVENING time
+        "dusk_offset": 0,                # evening begins this many minutes after the real sunset (negative = before)
         "golden_minutes": 60,            # golden hour = this many minutes before sunset
         "sun_entity": "sun.sun",
         "temp_bands": {"heatwave": 35, "hot": 29, "warm": 23, "mild": 17, "chilly": 10, "cold": 2},
@@ -88,11 +90,12 @@ def validate(cfg: dict) -> dict:
                 raise ValueError(f"{label} {k}: use HH:MM")
             out["options"][key][k] = v
         m = {k: int(v[:2]) * 60 + int(v[3:]) for k, v in out["options"][key].items()}
-        if not (m["NIGHT"] < m["EARLYMORNING"] < m["MORNING"] < m["MIDDAY"] < m["AFTERNOON"] < m["LATEEVENING"]):
-            raise ValueError(f"{label} must be in order: night < early morning < morning < midday < afternoon < late evening")
+        if not (m["NIGHT"] < m["EARLYMORNING"] < m["MORNING"] < m["MIDDAY"] < m["AFTERNOON"] < m["EVENING"] < m["LATEEVENING"]):
+            raise ValueError(f"{label} must be in order: night < early morning < morning < midday < afternoon < evening < late evening")
     out["options"]["free_moments_enabled"] = bool(op.get("free_moments_enabled", False))
     out["options"]["follow_dawn"] = bool(op.get("follow_dawn", False))
-    for k, lo, hi in (("dawn_offset", -120, 240), ("golden_minutes", 10, 180)):
+    out["options"]["follow_dusk"] = bool(op.get("follow_dusk", True))
+    for k, lo, hi in (("dawn_offset", -120, 240), ("dusk_offset", -120, 240), ("golden_minutes", 10, 180)):
         v = op.get(k, DEFAULTS["options"][k])
         if isinstance(v, bool) or not isinstance(v, (int, float)) or not lo <= v <= hi:
             raise ValueError(f"{k}: number between {lo} and {hi}")

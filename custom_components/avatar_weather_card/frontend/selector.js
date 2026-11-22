@@ -14,7 +14,7 @@ export const SKIES = ["clear", "cloudy", "wind", "fog", "rain", "storm", "hail",
 export const MOMENT_LIST = ["earlymorning", "morning", "midday", "afternoon", "goldenhour", "evening", "lateevening", "night", "day", "any"];
 const DAYTIME = { morning: 1, midday: 2, afternoon: 3, goldenhour: 4 };
 const NIGHTTIME = { evening: 1, lateevening: 2, night: 3 };
-export const DEFAULT_MOMENTS = { EARLYMORNING: "05:00", MORNING: "08:30", MIDDAY: "12:00", AFTERNOON: "15:00", LATEEVENING: "22:00", NIGHT: "01:00" };
+export const DEFAULT_MOMENTS = { EARLYMORNING: "05:00", MORNING: "08:30", MIDDAY: "12:00", AFTERNOON: "15:00", EVENING: "18:00", LATEEVENING: "22:00", NIGHT: "01:00" };
 
 // The reduced set of slots (2026-11-08): the weather and the clock are folded into it before a picture is looked for,
 // so the settings only need 5 temperature bands, 4 skies and 5 moments. Pictures with the finer names still work (nearest pick).
@@ -32,6 +32,8 @@ export function createSelector(opts = {}) {
   const MOMENTS = { ...DEFAULT_MOMENTS, ...(opts.moments || {}) };
   const MOMENTS_FREE = opts.freeMoments ? { ...DEFAULT_MOMENTS, ...opts.freeMoments } : null;   // times for weekends/holidays (optional)
   const FOLLOW_DAWN = !!opts.followDawn, DAWN_OFFSET = opts.dawnOffset ?? 0;
+  const FOLLOW_DUSK = opts.followDusk !== false, DUSK_OFFSET = opts.duskOffset ?? 0;
+  // followDusk (default): the evening begins at the real sunset + offset minutes (negative = before); otherwise at the fixed EVENING time
   const TB = { heatwave: 35, hot: 29, warm: 23, mild: 17, chilly: 10, cold: 2, ...(opts.tempBands || {}) };
   const weekendLooks = opts.weekendLooks !== false;
   // events: { halloween: ["10-31","10-31"], ... }
@@ -93,7 +95,8 @@ export function createSelector(opts = {}) {
     return "clear";
   }
 
-  // s = { isDay, solar, sunrise }  sunrise: minutes after midnight (local), used when followDawn is on.
+  // s = { isDay, solar, sunrise, sunset }  sunrise: minutes after midnight (local), used when followDawn is on;
+  // sunset: minutes after midnight, used for the evening offset (without it the evening starts when the sun is down).
   function momentOf(s, d) {
     const m = d.getHours() * 60 + d.getMinutes();
     const M = MOMENTS_FREE && isFree(d) ? MOMENTS_FREE : MOMENTS;
@@ -104,7 +107,15 @@ export function createSelector(opts = {}) {
     }
     if (m >= at("EARLYMORNING") && m < morning) return "earlymorning";
     if (m >= at("NIGHT") && m < at("EARLYMORNING")) return "night";
-    if (s.isDay === false) {
+    let dark = s.isDay === false;
+    if (m >= 12 * 60) {
+      if (!FOLLOW_DUSK && at("EVENING") != null) dark = m >= at("EVENING");   // manual time
+      else if (DUSK_OFFSET && s.sunset != null && isFinite(s.sunset)) {         // sunset + offset, kept between the afternoon and late evening
+        const dusk = Math.min(at("LATEEVENING") - 30, Math.max(at("AFTERNOON") + 30, s.sunset + DUSK_OFFSET));
+        dark = m >= dusk;
+      }
+    }
+    if (dark) {
       if (m >= morning && m < 12 * 60) return "morning";
       return (m >= at("LATEEVENING") || m < at("NIGHT")) ? "lateevening" : "evening";
     }
@@ -282,6 +293,12 @@ export function solarMoment(sun, now = Date.now(), goldenMinutes = 60) {
     if (isFinite(rise) && rise - now > 22 * HOUR) return "sunrise";
   }
   return null;
+}
+
+// Minutes after local midnight of the sun's next setting (about today's sunset), or null.
+export function sunsetMinutes(sun) {
+  const d = new Date(((sun && sun.attributes) || {}).next_setting);
+  return isFinite(d) ? d.getHours() * 60 + d.getMinutes() : null;
 }
 
 // Minutes after local midnight of the sun's next rising (about today's sunrise), or null.

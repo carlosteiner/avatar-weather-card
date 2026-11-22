@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- Settings → Times of day: *Evening starts at sunset* (tick box) with a delay in minutes after the sunset (negative = before, 0 = at sunset, as before). In winter the sun sets early, so the evening picture can now be delayed; with the box unticked the *Evening* time is set by hand. The Evening time and the day strips show today's start.
+
 ## 0.3.2 (2026-11-21)
 - Images tab: the "Drop pictures here" box is gone (drop on a cell and Ctrl+V still work).
 - Picture pop-up: zoom (wheel, pinch, double click, − / + buttons, keys + - 0) with drag to move, a *Delete* button, and *Transparency…* that opens the background editor inside the pop-up.

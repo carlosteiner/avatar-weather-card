@@ -17,7 +17,7 @@
 //   show_picture: true            (optional: show which picture was chosen and why)
 //   avatar_x: 0.74, avatar_size: 0.74   (optional: where she stands, 0-1 of the width; her height as a fraction of the card)
 // The picture is chosen by the same selector as the admin panel, from the global settings of the integration.
-import { createSelector, aggregateWeather, solarMoment, sunriseMinutes } from "./selector.js?v=0.3.2";
+import { createSelector, aggregateWeather, solarMoment, sunriseMinutes, sunsetMinutes } from "./selector.js?v=0.3.2";
 import { createBackground } from "./avatar-weather-background.js?v=0.3.2";
 import { weatherIconSVG, SENSOR_ICONS } from "./avatar-weather-icons.js?v=0.3.2";
 
@@ -46,7 +46,7 @@ export function pickPicture(data, states, now, overrides = {}) {
   }
   const sel = createSelector({
     windKmh: o.wind_kmh, humidPct: o.humid_pct, weekendLooks: o.weekend_looks, moments: o.moments, tempBands: o.temp_bands,
-    followDawn: o.follow_dawn, dawnOffset: o.dawn_offset, freeMoments: o.free_moments_enabled ? o.moments_free : null, events, holidays,
+    followDawn: o.follow_dawn, dawnOffset: o.dawn_offset, followDusk: o.follow_dusk, duskOffset: o.dusk_offset, freeMoments: o.free_moments_enabled ? o.moments_free : null, events, holidays,
   });
   const sun = states[o.sun_entity] || states[Object.keys(states).find((k) => k.startsWith("sun."))] || null;
   const agg = aggregateWeather(data.weather_sources || [], states);
@@ -56,7 +56,7 @@ export function pickPicture(data, states, now, overrides = {}) {
   const state = {
     condition: agg.condition, temp, humidity, wind: agg.wind,
     isDay: sun ? sun.state === "above_horizon" : now.getHours() >= 7 && now.getHours() < 20,
-    solar: solarMoment(sun, now.getTime(), o.golden_minutes), sunrise: sunriseMinutes(sun),
+    solar: solarMoment(sun, now.getTime(), o.golden_minutes), sunrise: sunriseMinutes(sun), sunset: sunsetMinutes(sun),
   };
   const want = sel.want(slots, state, now);
   const key = String(Math.floor(now.getTime() / 3600000));   // alternates (_2, _3…) change every hour

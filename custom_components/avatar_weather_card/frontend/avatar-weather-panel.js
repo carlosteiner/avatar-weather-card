@@ -1,7 +1,7 @@
 // Avatar Weather Card - admin panel: settings, prompts, images.
 import { SHARED, parsePrompts, serializePrompts, assemble, sceneOf, baseName, DEFAULT_URL, GUIDE_URL } from "./prompts.js?v=0.3.2-2";
 import { detectColor, isOpaque, cutBackground, hex, rgb } from "./bgcut.js?v=0.3.2";
-import { createSelector, aggregateWeather, solarMoment, sunriseMinutes, MUSIC_TEMPS } from "./selector.js?v=0.3.2";
+import { createSelector, aggregateWeather, solarMoment, sunriseMinutes, sunsetMinutes, MUSIC_TEMPS } from "./selector.js?v=0.3.2";
 const VER = "0.3.2";
 // The cells of the Images grid (2026-11-08 reduction): 5 temperatures x 4 skies x 5 moments, snow only when cold, no cloudy at night,
 // the same cells on the weekend; music: 3 temperatures x 5 moments x weekday/weekend; special days: <id>_<moment>.
@@ -934,14 +934,14 @@ class AvatarWeatherPanel extends HTMLElement {
         <h2>Times of day</h2>
         <p class="h">Sun entity: <select data-opsel="sun_entity">${this._ids("sun").map((e) => `<option value="${esc(e)}" ${c.options.sun_entity === e ? "selected" : ""}>${esc(e)}</option>`).join("") || `<option value="sun.sun">sun.sun</option>`}</select>
           <small>(if it is missing the first sun.* entity is used)</small></p>
-        <p class="h">The evening follows the real sunset. The afternoon picture also covers the golden hour, the evening picture also covers the late evening, and the morning picture runs until the afternoon starts (midday is part of it).</p>
+        <p class="h">The evening follows the real sunset (plus the delay set below). The afternoon picture also covers the golden hour, the evening picture also covers the late evening, and the morning picture runs until the afternoon starts (midday is part of it).</p>
         <label><input type="checkbox" data-op="follow_dawn" ${c.options.follow_dawn ? "checked" : ""}> Morning starts at sunrise
           <input type="number" min="-120" max="240" style="width:64px" data-op="dawn_offset" value="${c.options.dawn_offset}"> min after (negative = before); the “Morning” time below then shows today's start and can't be edited</label>
+        <label><input type="checkbox" data-op="follow_dusk" ${c.options.follow_dusk ? "checked" : ""}> Evening starts at sunset
+          <input type="number" min="-120" max="240" style="width:64px" data-op="dusk_offset" value="${c.options.dusk_offset}"> min after (negative = before); the “Evening” time below then shows today's start and can't be edited. Untick it to set the time by hand</label>
         <p class="h" style="margin-top:12px">Each moment starts at:</p>
         <table><tr><td></td><td><small>weekdays</small></td><td class="fc" ${c.options.free_moments_enabled ? "" : "hidden"}><small>weekends and holidays</small></td></tr>
-          ${[["EARLYMORNING", "Early morning"], ["MORNING", "Morning (and midday)"], ["AFTERNOON", "Afternoon (and golden hour)"], ["SUNSET", "Evening (from sunset, and late evening)"], ["NIGHT", "Night"]].map(([k, lbl]) => k === "SUNSET"
-            ? `<tr><td>${lbl}</td><td><input type="time" data-gh="${k}" disabled title="Follows the real sunset"></td><td class="fc" ${c.options.free_moments_enabled ? "" : "hidden"}><input type="time" data-gh="${k}" disabled title="Follows the real sunset"></td></tr>`
-            : `<tr><td>${lbl}</td><td><input type="time" data-mo="${k}" value="${c.options.moments[k]}"></td><td class="fc" ${c.options.free_moments_enabled ? "" : "hidden"}><input type="time" data-mf="${k}" value="${c.options.moments_free[k]}"></td></tr>`).join("")}</table>
+          ${[["EARLYMORNING", "Early morning"], ["MORNING", "Morning (and midday)"], ["AFTERNOON", "Afternoon (and golden hour)"], ["EVENING", "Evening (and late evening)"], ["NIGHT", "Night"]].map(([k, lbl]) => `<tr><td>${lbl}</td><td><input type="time" data-mo="${k}" value="${c.options.moments[k]}"></td><td class="fc" ${c.options.free_moments_enabled ? "" : "hidden"}><input type="time" data-mf="${k}" value="${c.options.moments_free[k]}"></td></tr>`).join("")}</table>
         <label><input type="checkbox" data-op="free_moments_enabled" ${c.options.free_moments_enabled ? "checked" : ""}> Use different times on weekends and holidays</label>
         <div id="timeline" style="margin-top:10px"></div>
 
@@ -976,19 +976,12 @@ class AvatarWeatherPanel extends HTMLElement {
   _selOpts() {
     const o = this._cfg.options;
     return { windKmh: o.wind_kmh, humidPct: o.humid_pct, weekendLooks: o.weekend_looks, moments: o.moments,
-      tempBands: o.temp_bands, followDawn: o.follow_dawn, dawnOffset: o.dawn_offset, freeMoments: o.free_moments_enabled ? o.moments_free : null };
+      tempBands: o.temp_bands, followDawn: o.follow_dawn, dawnOffset: o.dawn_offset, followDusk: o.follow_dusk, duskOffset: o.dusk_offset, freeMoments: o.free_moments_enabled ? o.moments_free : null };
   }
 
   // "Morning starts at sunrise": the Morning inputs show today's start (read-only); otherwise the saved time, editable.
   _syncMorning() {
     const r = this.shadowRoot, o = this._cfg.options;
-    // Golden hour and evening: read-only, from the real sunset.
-    const sd = new Date(((this._sun() || {}).attributes || {}).next_setting), gm = o.golden_minutes;
-    if (isFinite(sd) && isFinite(gm) && r.querySelectorAll) {
-      const hm = (t) => { t = ((Math.round(t) % 1440) + 1440) % 1440; return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"); };
-      const set = sd.getHours() * 60 + sd.getMinutes();
-      r.querySelectorAll("[data-gh]").forEach((x) => { x.value = hm(x.dataset.gh === "SUNSET" ? set : set - gm); });
-    }
     const follow = r.querySelector('[data-op="follow_dawn"]')?.checked;
     const off = parseFloat(r.querySelector('[data-op="dawn_offset"]')?.value) || 0;
     const rise = sunriseMinutes(this._sun());
@@ -1003,7 +996,21 @@ class AvatarWeatherPanel extends HTMLElement {
         if (mid != null) t = Math.min(mid - 30, t);
         inp.value = hh(Math.max(0, Math.min(1439, Math.round(t)))); inp.disabled = true;
         inp.title = "Follows the sunrise (see the checkbox above)";
-      } else { inp.value = saved.MORNING; inp.disabled = false; inp.title = ""; }
+      } else { if (inp.disabled) inp.value = saved.MORNING; inp.disabled = false; inp.title = ""; }   // back to the saved time only when it was following the sun: never overwrite what is being typed
+    });
+    // "Evening starts at sunset": the Evening inputs show today's start (sunset + delay, same limits as the picker); otherwise the saved time.
+    const followDusk = r.querySelector('[data-op="follow_dusk"]')?.checked, doff = parseFloat(r.querySelector('[data-op="dusk_offset"]')?.value) || 0;
+    const sset = sunsetMinutes(this._sun());
+    [["data-mo", o.moments], ["data-mf", o.moments_free]].forEach(([attr, saved]) => {
+      const inp = r.querySelector(`[${attr}="EVENING"]`); if (!inp) return;
+      if (followDusk && sset != null) {
+        const aft = mins(r.querySelector(`[${attr}="AFTERNOON"]`)?.value), late = mins(saved.LATEEVENING);   // late evening has no input of its own
+        let t = sset + doff;
+        if (aft != null) t = Math.max(aft + 30, t);
+        if (late != null) t = Math.min(late - 30, t);
+        inp.value = hh(Math.max(0, Math.min(1439, Math.round(t)))); inp.disabled = true;
+        inp.title = "Follows the sunset (see the checkbox above)";
+      } else { if (inp.disabled) inp.value = saved.EVENING; inp.disabled = false; inp.title = ""; }
     });
   }
 
@@ -1102,7 +1109,7 @@ class AvatarWeatherPanel extends HTMLElement {
         const d = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, m);
         const isDay = rise != null && set != null ? (set > rise ? m >= rise && m < set : m >= rise || m < set) : m >= 420 && m < 1200;
         const solar = isDay && set != null && ((set - m + 1440) % 1440) < o.golden_minutes ? "sunset" : null;
-        const k = sel.foldMoment(sel.momentOf({ isDay, solar, sunrise: rise }, d));
+        const k = sel.foldMoment(sel.momentOf({ isDay, solar, sunrise: rise, sunset: set }, d));
         if (prev && prev.k === k) prev.e = m + 5; else segs.push((prev = { k, s: m, e: m + 5 }));
       }
       return `<div style="margin-top:8px"><small>${label}</small></div>
@@ -1129,7 +1136,7 @@ class AvatarWeatherPanel extends HTMLElement {
     const sel = createSelector({ ...this._selOpts(), events, holidays });
     const slots = (this._lib && this._lib.slots) || {};
     const state = { condition: agg.condition, temp: agg.temp, humidity: agg.humidity, wind: agg.wind,
-      isDay: sun ? sun.state === "above_horizon" : now.getHours() >= 7 && now.getHours() < 20, solar: solarMoment(sun, Date.now(), c.options.golden_minutes), sunrise: sunriseMinutes(sun) };
+      isDay: sun ? sun.state === "above_horizon" : now.getHours() >= 7 && now.getHours() < 20, solar: solarMoment(sun, Date.now(), c.options.golden_minutes), sunrise: sunriseMinutes(sun), sunset: sunsetMinutes(sun) };
     const want = sel.want(slots, state, now);
     const f = (v, u, d = 1) => (v == null ? "–" : v.toFixed(d) + u);
     const res = Object.keys(slots).length ? sel.choose(slots, want, false, String(Math.floor(now.getTime() / 3600000))) : null;
@@ -1159,8 +1166,9 @@ class AvatarWeatherPanel extends HTMLElement {
     const o = c.options, num = (v, d) => { const n = parseFloat(v); return isFinite(n) ? n : d; };
     r.querySelectorAll("[data-tb]").forEach((x) => { o.temp_bands[x.dataset.tb] = num(x.value, o.temp_bands[x.dataset.tb]); });
     const follow = r.querySelector('[data-op="follow_dawn"]')?.checked;   // while following the dawn the Morning inputs only display today's time
-    r.querySelectorAll("[data-mo]").forEach((x) => { if (/^\d\d:\d\d$/.test(x.value) && !(follow && x.dataset.mo === "MORNING")) o.moments[x.dataset.mo] = x.value; });
-    r.querySelectorAll("[data-mf]").forEach((x) => { if (/^\d\d:\d\d$/.test(x.value) && !(follow && x.dataset.mf === "MORNING")) o.moments_free[x.dataset.mf] = x.value; });
+    const followD = r.querySelector('[data-op="follow_dusk"]')?.checked;   // likewise the Evening inputs while following the sunset
+    r.querySelectorAll("[data-mo]").forEach((x) => { if (/^\d\d:\d\d$/.test(x.value) && !(follow && x.dataset.mo === "MORNING") && !(followD && x.dataset.mo === "EVENING")) o.moments[x.dataset.mo] = x.value; });
+    r.querySelectorAll("[data-mf]").forEach((x) => { if (/^\d\d:\d\d$/.test(x.value) && !(follow && x.dataset.mf === "MORNING") && !(followD && x.dataset.mf === "EVENING")) o.moments_free[x.dataset.mf] = x.value; });
     r.querySelectorAll("[data-opsel]").forEach((x) => { o[x.dataset.opsel] = x.value; });
     r.querySelectorAll("[data-op]").forEach((x) => { o[x.dataset.op] = x.type === "checkbox" ? x.checked : num(x.value, o[x.dataset.op]); });
     // Values the settings page no longer shows but the backend still checks (heatwave/cold thresholds, midday): kept consistent with the visible ones.
