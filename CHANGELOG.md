@@ -4,6 +4,7 @@
 - **Security:** the pictures are no longer served as unauthenticated static paths. They come from an authenticated view (`/api/avatar_weather_card/image/<set>/<name>.webp`, any logged-in user); the card and the panel fetch them with the user's login and show them as blob URLs, so nobody who can merely reach Home Assistant (Nabu Casa, port forward) can read them.
 - The optional *reference picture* (Prompts tab, Images tab "Copy reference image") is removed: it was not used by the card and is often a photo of a real person. A copy left on disk by an older version is deleted at the next start.
 - Settings → Times of day: *Evening starts at sunset* (tick box) with a delay in minutes after the sunset (negative = before, 0 = at sunset, as before). In winter the sun sets early, so the evening picture can now be delayed; with the box unticked the *Evening* time is set by hand. The Evening time and the day strips show today's start.
+- Background editor: a closed gap between the legs or arms is removed when it is thick enough (the *Gap size* setting, relative to the picture size), not when its area is large enough: a thin slit is kept, a wide opening goes.
 
 ## 0.3.2 (2026-11-21)
 - Images tab: the "Drop pictures here" box is gone (drop on a cell and Ctrl+V still work).
