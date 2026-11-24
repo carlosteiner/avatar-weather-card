@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .images import valid_name
-from .sets import MAX_SERIES_BYTES, SetExists
+from .sets import MAX_SERIES_BYTES, SLOT_FILE, SetExists
 
 
 class UploadView(HomeAssistantView):
@@ -85,29 +85,33 @@ class OriginalView(HomeAssistantView):
         return web.Response(body=found[0], content_type=found[1], headers={"Cache-Control": "no-store"})
 
 
-class ReferenceUploadView(HomeAssistantView):
-    url = "/api/avatar_weather_card/reference"
-    name = "api:avatar_weather_card:reference"
+_PICTURE_CACHE = {"Cache-Control": "private, max-age=86400"}   # the ?v= of the URL changes whenever a picture does
+
+
+class PictureView(HomeAssistantView):
+    """A picture of a set, for any logged-in user (the card). Replaces the old unauthenticated static path."""
+    url = "/api/avatar_weather_card/image/{sid}/{name}"
+    extra_urls = ["/api/avatar_weather_card/image/{name}"]      # no set named: the active set
+    name = "api:avatar_weather_card:image"
     requires_auth = True
 
     def __init__(self, hass: HomeAssistant) -> None:
         self.hass = hass
 
-    async def post(self, request: web.Request) -> web.Response:
-        if not request["hass_user"].is_admin:
-            return self.json_message("Admin required", 403)
-        blob = None
-        reader = await request.multipart()
-        async for part in reader:
-            if part.name == "file":
-                blob = await part.read(decode=False)
-        if not blob:
-            return self.json_message("No file", 400)
+    async def get(self, request: web.Request, name: str, sid: str = "") -> web.StreamResponse:
+        data = self.hass.data[DOMAIN]
+        sid = sid or data["store"].active_set
+        slot = name[:-5] if name.endswith(".webp") else ""
+        if not SLOT_FILE.match(slot):
+            return self.json_message("Invalid picture name", 400)
         try:
-            info = await self.hass.async_add_executor_job(self.hass.data[DOMAIN]["reference"].save, blob)
-        except ValueError as err:
-            return self.json_message(str(err), 400)
-        return self.json(info)
+            lib = await self.hass.async_add_executor_job(data["sets"].lib, sid)
+        except ValueError:
+            return self.json_message("Set not found", 404)
+        path = lib.dir / f"{slot}.webp"
+        if not await self.hass.async_add_executor_job(path.is_file):
+            return self.json_message("Picture not found", 404)
+        return web.FileResponse(path, headers=_PICTURE_CACHE)
 
 
 class BackupDownloadView(HomeAssistantView):

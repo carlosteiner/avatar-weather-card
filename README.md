@@ -10,7 +10,7 @@ A Home Assistant integration and Lovelace card that shows **an avatar dressed fo
 
 ![The card in four moments: a sunny afternoon, rain, snow and a clear night](docs/img/hero.webp)
 
-> Version 0.3.2, in active development. Bug reports and ideas are welcome in the [issues](https://github.com/carlosteiner/avatar-weather-card/issues).
+> Version 0.3.3, in active development. Bug reports and ideas are welcome in the [issues](https://github.com/carlosteiner/avatar-weather-card/issues).
 
 ## What you get
 - A sidebar **panel** to set everything up: weather sources, thresholds, times of day, holidays, special days, the pictures and the prompts to make them.
@@ -104,7 +104,7 @@ his forties with a beard, a beagle, watercolour"*), save the answer as a `.txt` 
 ## Pictures
 The pictures are not part of this repository. Pictures live in **sets** (Settings tab → *Picture sets*): you can keep several, mark one as *active* (the one you edit in the **Images** tab) and let each card use a different one. Default sets are published separately (see the images repository linked from the releases) and install from the same place in one click, as new sets that never touch your own. You can also import a set from a zip, back sets up, rename them and export them to share: see [docs/SERIES.md](docs/SERIES.md). How the names work and how a picture is chosen: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-Pictures are served by Home Assistant without authentication (like any static path). Do not upload pictures of real people you do not want to be readable on your network, and note that some image generators refuse to work from a picture of a real person.
+Pictures are only served to logged-in Home Assistant users (the card and the panel fetch them with your login) (nothing is readable without logging in).
 
 ## Contributing
 Issues and pull requests are welcome. The integration is plain Python, the panel and the card are plain JavaScript modules (no build step).

@@ -17,11 +17,11 @@
 //   show_picture: true            (optional: show which picture was chosen and why)
 //   avatar_x: 0.74, avatar_size: 0.74   (optional: where she stands, 0-1 of the width; her height as a fraction of the card)
 // The picture is chosen by the same selector as the admin panel, from the global settings of the integration.
-import { createSelector, aggregateWeather, solarMoment, sunriseMinutes, sunsetMinutes } from "./selector.js?v=0.3.2";
-import { createBackground } from "./avatar-weather-background.js?v=0.3.2";
-import { weatherIconSVG, SENSOR_ICONS } from "./avatar-weather-icons.js?v=0.3.2";
+import { createSelector, aggregateWeather, solarMoment, sunriseMinutes, sunsetMinutes } from "./selector.js?v=0.3.3";
+import { createBackground } from "./avatar-weather-background.js?v=0.3.3";
+import { weatherIconSVG, SENSOR_ICONS } from "./avatar-weather-icons.js?v=0.3.3";
+import { blobUrl, IMAGE_API } from "./authimg.js?v=0.3.3";
 
-const IMAGES = "/avatar_weather_card_images";
 const REFRESH_MS = 5 * 60 * 1000;   // settings and picture list
 const TICK_MS = 10 * 1000;          // the clock and the moment of the day
 const FORECAST_MS = 30 * 60 * 1000;
@@ -93,7 +93,7 @@ class AvatarWeatherCard extends HTMLElement {
   getCardSize() { return Math.max(3, Math.round((this._config ? this._config.height : 420) / 50)); }
   static getStubConfig() { return { name: "", height: 420 }; }
   // The visual editor ("Edit" on the card): loaded only when it is opened.
-  static async getConfigElement() { await import("./avatar-weather-card-editor.js?v=0.3.2"); return document.createElement("avatar-weather-card-editor"); }
+  static async getConfigElement() { await import("./avatar-weather-card-editor.js?v=0.3.3"); return document.createElement("avatar-weather-card-editor"); }
 
   set hass(hass) {
     this._hass = hass;
@@ -246,10 +246,10 @@ class AvatarWeatherCard extends HTMLElement {
   }
 
   // The picture as a loaded <img>, handed to the canvas when it is ready.
-  // Where a picture is served: /avatar_weather_card_images/<set>/<name>.webp (<set> is the picture set this card uses).
+  // Where a picture is served (login required, fetched as a blob): /api/avatar_weather_card/image/<set>/<name>.webp (<set> is the picture set this card uses).
   _src(name, slot) {
     const set = this._data && this._data.images && this._data.images.set;
-    return `${slot.u || `${IMAGES}${set ? "/" + encodeURIComponent(set) : ""}/${encodeURIComponent(name)}.webp`}?v=${slot.v || 0}`;
+    return `${IMAGE_API}${set ? "/" + encodeURIComponent(set) : ""}/${encodeURIComponent(name)}.webp?v=${slot.v || 0}`;
   }
 
   _show(name, slot, body) {
@@ -258,7 +258,8 @@ class AvatarWeatherCard extends HTMLElement {
     const give = () => { if (this._bg && this._want === src) this._bg.setCharacter({ img: im, feetY: slot.feetY, body, lit: (slot.lum || 255) < EVENING_LUM }); };
     this._want = src;
     if (!im) {
-      im = new Image(); im.onload = give; im.src = src;
+      im = new Image(); im.onload = give;
+      blobUrl(this._hass, src).then((u) => { im.src = u; }, () => { this._imgs.delete(src); });
       this._imgs.set(src, im);
       if (this._imgs.size > 40) this._imgs.delete(this._imgs.keys().next().value);
     } else if (im.complete && im.naturalWidth) give();
@@ -394,7 +395,7 @@ class AvatarWeatherCard extends HTMLElement {
     const av = sr.getElementById("npa"), img = sr.getElementById("npimg");
     if (rm.music && slots[rm.music.name]) {
       const src = this._src(rm.music.name, slots[rm.music.name]);
-      if (img.getAttribute("src") !== src) img.setAttribute("src", src);
+      if (img.dataset.asrc !== src) { img.dataset.asrc = src; blobUrl(this._hass, src).then((u) => { if (img.dataset.asrc === src) img.setAttribute("src", u); }, () => {}); }
       av.classList.add("has");
     } else av.classList.remove("has");
     const t = sr.getElementById("npt"); if (t) t.textContent = new Date().toLocaleTimeString(this._hass.language, { hour: "2-digit", minute: "2-digit" });

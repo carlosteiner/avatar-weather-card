@@ -1,8 +1,9 @@
 // Avatar Weather Card - admin panel: settings, prompts, images.
-import { SHARED, parsePrompts, serializePrompts, assemble, sceneOf, baseName, DEFAULT_URL, GUIDE_URL } from "./prompts.js?v=0.3.2-2";
-import { detectColor, isOpaque, cutBackground, hex, rgb } from "./bgcut.js?v=0.3.2";
-import { createSelector, aggregateWeather, solarMoment, sunriseMinutes, sunsetMinutes, MUSIC_TEMPS } from "./selector.js?v=0.3.2";
-const VER = "0.3.2";
+import { SHARED, parsePrompts, serializePrompts, assemble, sceneOf, baseName, DEFAULT_URL, GUIDE_URL } from "./prompts.js?v=0.3.3";
+import { detectColor, isOpaque, cutBackground, hex, rgb } from "./bgcut.js?v=0.3.3";
+import { createSelector, aggregateWeather, solarMoment, sunriseMinutes, sunsetMinutes, MUSIC_TEMPS } from "./selector.js?v=0.3.3";
+import { blobUrl, hydrate, IMAGE_API } from "./authimg.js?v=0.3.3";
+const VER = "0.3.3";
 // The cells of the Images grid (2026-11-08 reduction): 5 temperatures x 4 skies x 5 moments, snow only when cold, no cloudy at night,
 // the same cells on the weekend; music: 3 temperatures x 5 moments x weekday/weekend; special days: <id>_<moment>.
 // The finer names (freezing, heatwave, fog, wind, storm, hail, sleet, snowstorm, midday, goldenhour, lateevening) are still valid
@@ -34,6 +35,7 @@ class AvatarWeatherPanel extends HTMLElement {
 
   async _init() {
     this.attachShadow({ mode: "open" });
+    hydrate(this.shadowRoot, () => this._hass);   // pictures need the login: <img data-asrc> are filled in as blob URLs
     this._initLightbox();
     try {
       this._cfg = await this._hass.callWS({ type: "avatar_weather_card/config_get" });
@@ -49,7 +51,7 @@ class AvatarWeatherPanel extends HTMLElement {
   // Click any picture to see it big. Arrows (or the keys, or a swipe) step through the visible pictures; Esc, the cross or a click outside closes.
   _initLightbox() {
     const root = this.shadowRoot;
-    const IMG = 'img[src*="/avatar_weather_card_images/"], img[src*="/avatar_weather_card_reference/"]';
+    const IMG = `img[data-asrc*="${IMAGE_API}/"]`;
     const nameOf = (src) => { const m = /\/([^\/?#]+)\.(?:webp|png)(?:[?#]|$)/.exec(src || ""); return m ? decodeURIComponent(m[1]) : ""; };
     const make = () => {
       const d = document.createElement("dialog");
@@ -135,7 +137,7 @@ class AvatarWeatherPanel extends HTMLElement {
     // what image_delete needs: the set and the picture name, only for pictures of the set shown in the Images tab
     const delOf = (src) => {
       if (this._tab !== "images") return null;
-      const m = /\/avatar_weather_card_images\/(?:([^\/?#]+)\/)?([^\/?#]+)\.webp(?:[?#]|$)/.exec(src || "");
+      const m = /\/avatar_weather_card\/image\/(?:([^\/?#]+)\/)?([^\/?#]+)\.webp(?:[?#]|$)/.exec(src || "");
       return m ? { set: m[1] ? decodeURIComponent(m[1]) : "", name: decodeURIComponent(m[2]) } : null;
     };
     this._lbDelete = async () => {
@@ -161,7 +163,8 @@ class AvatarWeatherPanel extends HTMLElement {
       this._lbAt = (i + n) % n;
       const it = this._lbSeq[this._lbAt];
       const big = d.querySelector(".lbstage img");
-      big.removeAttribute("src"); big.src = it.src; big.alt = it.name;
+      big.removeAttribute("src"); big.alt = it.name;
+      blobUrl(this._hass, it.src).then((u) => { const cur = this._lbSeq[this._lbAt]; if (cur && cur.src === it.src) big.src = u; }, () => {});
       if (this._lbZoomReset) this._lbZoomReset();
       d.classList.remove("ed"); d.querySelector(".lbed").hidden = true; d.querySelector(".lbed").innerHTML = "";
       d.querySelector(".lbbg").hidden = !(it.del && this._openBgIn && ((this._lib && this._lib.slots[it.del.name]) || {}).orig);
@@ -176,10 +179,10 @@ class AvatarWeatherPanel extends HTMLElement {
       const seq = [], seen = {};
       root.querySelectorAll(IMG).forEach((im) => {
         if (this._lbDlg.contains(im) || im.closest("[hidden]")) return;
-        const src = im.getAttribute("src"), key = src.split("?")[0];
+        const src = im.dataset.asrc, key = src.split("?")[0];
         if (!seen[key]) { seen[key] = 1; seq.push({ src, name: nameOf(src), del: delOf(src) }); }
       });
-      const at = img.getAttribute("src"), k = at.split("?")[0];
+      const at = img.dataset.asrc, k = at.split("?")[0];
       let i = seq.findIndex((x) => x.src.split("?")[0] === k);
       if (i < 0) { seq.unshift({ src: at, name: nameOf(at), del: delOf(at) }); i = 0; }
       this._lbSeq = seq;
@@ -228,7 +231,7 @@ class AvatarWeatherPanel extends HTMLElement {
         summary { cursor:pointer; padding:6px 0 } details label { display:inline-block; margin:4px 14px 4px 0 }
         .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px; margin-top:10px }
         .card { background:var(--card-background-color); border-radius:10px; padding:6px; text-align:center; font-size:11px; word-break:break-all }
-        img[src*="/avatar_weather_card_images/"], img[src*="/avatar_weather_card_reference/"] { cursor:zoom-in }
+        img[data-asrc*="/avatar_weather_card/image/"] { cursor:zoom-in }
         dialog.lb { border:0; padding:0; background:transparent; max-width:100vw; max-height:100vh; color:var(--primary-text-color) }
         dialog.lb::backdrop { background:rgba(10,14,20,.78) }
         dialog.lb figure { max-height:calc(100vh - 16px); overflow:auto; margin:0; background:var(--card-background-color,#fff); border:1px solid var(--divider-color); border-radius:10px; padding:14px }
@@ -250,21 +253,6 @@ class AvatarWeatherPanel extends HTMLElement {
       </section>`;
     this.shadowRoot.querySelectorAll(".tabs button").forEach((b) => (b.onclick = () => { this._tab = b.dataset.t; this._render(); }));
     if (this._tab === "images") this._renderImages(); else if (this._tab === "avatar") this._renderAvatar(); else this._renderSettings();
-  }
-
-  // Copy a picture to the clipboard as PNG (flattened on light grey so transparency does not turn black in the generator). Needs https or localhost.
-  async _copyImage(url, msg) {
-    const say = (t) => { if (msg) msg.textContent = t; };
-    if (!navigator.clipboard || !window.ClipboardItem) { say("The browser only allows this on https: use Download the original, or open Home Assistant through its https address."); return; }
-    try {
-      const blob = await (await fetch(url)).blob();
-      const bmp = await createImageBitmap(blob);
-      const c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
-      const g = c.getContext("2d"); g.fillStyle = "#cfcfcf"; g.fillRect(0, 0, c.width, c.height); g.drawImage(bmp, 0, 0);
-      const png = await new Promise((res) => c.toBlob(res, "image/png"));
-      await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
-      say("Image copied ✓ (paste it into the generator)");
-    } catch (e) { say("Could not copy: " + (e && e.message ? e.message : e)); }
   }
 
   // The prompt file of the active set: its own (kept on Home Assistant) or the built-in one. Cached until saved.
@@ -306,8 +294,6 @@ class AvatarWeatherPanel extends HTMLElement {
   async _renderAvatar() {
     const body = this.shadowRoot.getElementById("body"), r = this.shadowRoot;
     try { this._lib = await this._hass.callWS({ type: "avatar_weather_card/images_list" }); } catch (e) { this._lib = this._lib || { slots: {} }; }
-    let ref = null;
-    try { ref = await this._hass.callWS({ type: "avatar_weather_card/reference_get" }); } catch (e) { /* older backend */ }
     const pr = await this._prompts();
     const p = pr.p, nScenes = p.order.filter((n) => (p.scenes[n] || "").trim()).length;
     const setName = this._lib.set_name || pr.set;
@@ -335,18 +321,7 @@ class AvatarWeatherPanel extends HTMLElement {
       <p class="h">These are in every prompt. Changing them changes all the pictures of this set that you generate from now on.</p>
       <div id="parts">${SHARED.map(([k, label, hint]) => `<div style="margin:12px 0"><b>${esc(label)}</b> <small>${esc(hint)}</small>
         <textarea data-part="${esc(k)}" rows="${k === "STYLE" ? 9 : 5}">${esc(p.shared[k] || "")}</textarea></div>`).join("")}</div>
-      <p><button id="psave">Save shared sections</button><span id="pmsg" style="margin-left:12px"></span></p>
-      <details style="margin-top:24px"${ref ? " open" : ""}><summary><b>Reference picture</b> <small>(optional, only for generators that take a picture)</small></summary>
-        <p class="h">A picture of the character to attach to every prompt, so the generator keeps the same face, hair and drawing style. Once you have one generated picture you like, you can use that.
-          If it shows a real person, some generators refuse it, and you should not share that avatar publicly.</p>
-        <div class="drop" id="rdrop">Drop the reference image here or <input type="file" id="rfile" accept="image/png,image/jpeg,image/webp"></div>
-        <div id="rmsg" class="h"></div>
-        ${ref ? `<div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
-            <img src="/avatar_weather_card_reference/${esc(ref.file)}?v=${ref.v}" style="max-height:340px;max-width:100%;border-radius:10px;background:repeating-conic-gradient(#8883 0 25%, transparent 0 50%) 50%/14px 14px">
-            <div><div><b>${esc(ref.file)}</b></div><small>${ref.w} × ${ref.h} px, ${(ref.bytes / 1024).toFixed(0)} KB</small>
-              <p><a href="/avatar_weather_card_reference/${esc(ref.file)}?v=${ref.v}" download="${esc(ref.file)}"><button class="s" type="button">Download the original</button></a>
-              <button class="s" id="rcopy" type="button">Copy image to clipboard</button> <button class="s" id="rdel">Remove</button> <span id="rcmsg" style="margin-left:8px"></span></p></div></div>` : `<p class="h">No reference picture yet.</p>`}
-      </details>`;
+      <p><button id="psave">Save shared sections</button><span id="pmsg" style="margin-left:12px"></span></p>`;
     const fmsg = r.getElementById("pfmsg"), say = (el, t, bad) => { el.className = bad ? "err" : "h"; el.textContent = t; };
     r.getElementById("pdl").onclick = () => this._download(fileName, pr.text);
     r.getElementById("pai").onclick = async () => this._download(`awc-prompt-instructions-${pr.set || "set"}.md`, await this._aiPack(pr), "text/markdown");
@@ -370,24 +345,6 @@ class AvatarWeatherPanel extends HTMLElement {
       r.querySelectorAll("#parts textarea").forEach((ta) => { q.shared[ta.dataset.part] = ta.value.trim(); });
       try { await this._savePrompts(serializePrompts(q)); m.className = ""; m.textContent = "Saved ✓"; this._renderAvatar(); } catch (e) { m.className = "err"; m.textContent = e.message || "Error"; }
     };
-    const send = async (f) => {
-      const msg = r.getElementById("rmsg"); msg.textContent = `${f.name} …`;
-      const fd = new FormData(); fd.append("file", f);
-      try {
-        const resp = await fetch("/api/avatar_weather_card/reference", { method: "POST", headers: { Authorization: `Bearer ${this._hass.auth.data.access_token}` }, body: fd });
-        const j = await resp.json();
-        if (resp.ok) this._renderAvatar(); else { msg.className = "h err"; msg.textContent = `${f.name}: ${j.message}`; }
-      } catch (e) { msg.className = "h err"; msg.textContent = e.message; }
-    };
-    r.getElementById("rfile").onchange = (e) => e.target.files[0] && send(e.target.files[0]);
-    const drop = r.getElementById("rdrop");
-    drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };
-    drop.ondragleave = () => drop.classList.remove("over");
-    drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("over"); if (e.dataTransfer.files[0]) send(e.dataTransfer.files[0]); };
-    const rc = r.getElementById("rcopy");
-    if (rc) rc.onclick = () => this._copyImage(`/avatar_weather_card_reference/${ref.file}?v=${ref.v}`, r.getElementById("rcmsg"));
-    const del = r.getElementById("rdel");
-    if (del) del.onclick = async () => { if (!confirm("Remove the reference picture?")) return; await this._hass.callWS({ type: "avatar_weather_card/reference_delete" }); this._renderAvatar(); };
   }
 
   // Asks, inline, a question with three answers: yes (back up first), no (go on without a backup), cancel.
@@ -580,7 +537,6 @@ class AvatarWeatherPanel extends HTMLElement {
     const r = this.shadowRoot, body = r.getElementById("body");
     let lib = { slots: {} };
     try { lib = await this._hass.callWS({ type: "avatar_weather_card/images_list" }); } catch (e) { /* keep empty */ }
-    let ref = null; try { ref = await this._hass.callWS({ type: "avatar_weather_card/reference_get" }); } catch (e) { /* older backend */ }
     this._lib = lib;
     const pr = await this._prompts();
     const st = (this._iv = this._iv || { sel: null, open: null, mode: {} });
@@ -607,7 +563,7 @@ class AvatarWeatherPanel extends HTMLElement {
     const secOf = (p) => (p.event ? "events" : p.music ? "music" : (p.moment === "any" || p.moment === "day") ? "day" : (FOLD[p.moment] || p.moment));
     const bySec = {}; parsedAll.forEach((p) => (bySec[secOf(p)] = bySec[secOf(p)] || []).push(p));
     const baseSet = new Set(all.map((n) => n.replace(/_\d+$/, "")));
-    const src = (n) => `${(slots[n] || {}).u || `/avatar_weather_card_images/${lib.set ? encodeURIComponent(lib.set) + "/" : ""}${esc(n)}.webp`}?v=${(slots[n] || {}).v || 0}`;
+    const src = (n) => `${IMAGE_API}/${lib.set ? encodeURIComponent(lib.set) + "/" : ""}${esc(n)}.webp?v=${(slots[n] || {}).v || 0}`;
     const exact = (nm) => all.filter((k) => k.replace(/_\d+$/, "") === nm);
     const WORDS = ["exact", "good", "fallback", "weak fallback"];
     const quality = (c, ideal, wk) => {   // thresholds of the coverage grid
@@ -652,7 +608,7 @@ class AvatarWeatherPanel extends HTMLElement {
     const TEMPLAB = { freezing: "freezing", cold: "cold", chilly: "chilly", mild: "mild", warm: "warm", hot: "hot", heatwave: "heatwave" };
     const listFor = (s) => (bySec[s.key] || []).sort((a, b) => (a.name < b.name ? -1 : 1)).map((p) => {
       const what = p.music ? `music · ${p.temp} · ${p.moment}` : p.event ? `${p.event} · ${p.moment}` : `${TEMPLAB[p.temp] || p.temp}${p.hum !== "any" ? " " + p.hum : ""} · ${p.sky} · ${p.moment}`;
-      return `<li class="slot"><div class="thumb"><img class="shot" loading="lazy" src="${src(p.name)}" alt=""></div>
+      return `<li class="slot"><div class="thumb"><img class="shot" data-asrc="${src(p.name)}" alt=""></div>
         <div class="meta"><code class="sid">${esc(p.name)}</code><p class="cond">${esc(what)}${p.weekend ? " · weekend" : ""}</p></div>
         <span class="chip c-done">Done</span><button class="s" data-pick="${esc(p.base)}" data-sec="${s.key}">Open</button><button class="s" data-del="${esc(p.name)}">Delete</button></li>`;
     }).join("");
@@ -839,7 +795,7 @@ class AvatarWeatherPanel extends HTMLElement {
       if (cellBtn) cellBtn.classList.add("sel");
       const ex = exact(nm), c = ex.length ? null : cellFor(nm, /_weekend$/.test(nm), s.kind === "music");
       const pics = ex.length
-        ? `<div style="display:flex;gap:12px;flex-wrap:wrap">${ex.map((n) => `<div class="card" style="width:150px"><img style="height:210px" src="${src(n)}"><div>${esc(n)}</div><button class="s" data-del="${esc(n)}">Delete</button>${(slots[n] || {}).orig ? `<button class="s" data-bg="${esc(n)}">Background…</button>` : ""}</div>`).join("")}</div><div id="bged"></div>`
+        ? `<div style="display:flex;gap:12px;flex-wrap:wrap">${ex.map((n) => `<div class="card" style="width:150px"><img style="height:210px" data-asrc="${src(n)}"><div>${esc(n)}</div><button class="s" data-del="${esc(n)}">Delete</button>${(slots[n] || {}).orig ? `<button class="s" data-bg="${esc(n)}">Background…</button>` : ""}</div>`).join("")}</div><div id="bged"></div>`
         : `<p class="h"><span class="err">No picture of its own yet.</span> ${c && c.name ? `Today this cell shows <code>${esc(c.name)}</code> (${WORDS[c.q]}).` : "There is no other picture to fall back on."}</p>${c && c.name ? `<img style="height:150px;opacity:.6" src="${src(c.name)}">` : ""}`;
       const scene = sceneOf(pr.p, nm), full = assemble(pr.p, nm);
       const prompt = `<h4 style="margin:14px 0 4px">Scene of this picture</h4>
@@ -847,7 +803,7 @@ class AvatarWeatherPanel extends HTMLElement {
           <textarea id="iscene" rows="6" placeholder="No scene yet for ${esc(nm)}: write one here.">${esc(scene)}</textarea>
           <p><button class="s" id="isave">Save scene</button><span id="ismsg" style="margin-left:10px"></span></p>
           <h4 style="margin:14px 0 4px">The whole prompt</h4>
-          <p><button id="icopy" ${full ? "" : "disabled"}>Copy prompt</button> <button class="s" id="ipeek">Show / hide</button>${ref ? ` <button class="s" id="icopyimg" type="button">Copy reference image</button>` : ""}<span id="imsg" style="margin-left:10px"></span></p>
+          <p><button id="icopy" ${full ? "" : "disabled"}>Copy prompt</button> <button class="s" id="ipeek">Show / hide</button><span id="imsg" style="margin-left:10px"></span></p>
           <textarea id="itext" readonly hidden style="min-height:220px">${esc(full)}</textarea>`;
       box.hidden = false;
       box.innerHTML = `<div style="padding:12px 14px;border-radius:10px;background:var(--card-background-color);margin-top:8px"><div><b><code>${esc(nm)}</code></b></div>${pics}
@@ -855,8 +811,6 @@ class AvatarWeatherPanel extends HTMLElement {
       const m = box.querySelector("#imsg"), t = box.querySelector("#itext");
       box.querySelector("#icopy").onclick = async () => { try { await navigator.clipboard.writeText(t.value); m.textContent = "Copied ✓"; } catch (e) { t.hidden = false; t.select(); m.textContent = "Press Ctrl+C"; } };
       box.querySelector("#ipeek").onclick = () => { t.hidden = !t.hidden; };
-      const ci = box.querySelector("#icopyimg");
-      if (ci) ci.onclick = () => this._copyImage(`/avatar_weather_card_reference/${ref.file}?v=${ref.v}`, m);
       box.querySelector("#isave").onclick = async () => {
         const sm = box.querySelector("#ismsg"), q = parsePrompts(pr.text), k = baseName(nm), v = box.querySelector("#iscene").value.trim();
         if (v) { if (!(k in q.scenes)) q.order.push(k); q.scenes[k] = v; } else { delete q.scenes[k]; q.order = q.order.filter((x) => x !== k); }
@@ -1146,7 +1100,7 @@ class AvatarWeatherPanel extends HTMLElement {
     const same = !!rp && (rp.event ? rp.event === wi.event && rp.moment === want.moment
       : rp.temp === want.temp && rp.sky === want.sky && rp.moment === want.moment && rp.weekend === want.weekend);
     const noEvPics = wi.event && !want.event;
-    const img = res ? `<img src="${(slots[res.name] || {}).u || `/avatar_weather_card_images/${this._lib && this._lib.set ? encodeURIComponent(this._lib.set) + "/" : ""}${esc(res.name)}.webp`}?v=${(slots[res.name] || {}).v || 0}" style="height:170px;float:right;margin-left:12px;border-radius:8px;background:repeating-conic-gradient(#8883 0 25%, transparent 0 50%) 50%/14px 14px">` : "";
+    const img = res ? `<img data-asrc="${IMAGE_API}/${this._lib && this._lib.set ? encodeURIComponent(this._lib.set) + "/" : ""}${esc(res.name)}.webp?v=${(slots[res.name] || {}).v || 0}" style="height:170px;float:right;margin-left:12px;border-radius:8px;background:repeating-conic-gradient(#8883 0 25%, transparent 0 50%) 50%/14px 14px">` : "";
     box.innerHTML = `${img}
       <div><b>Weather now</b> — temperature ${f(agg.temp, "°C")} · humidity ${f(agg.humidity, "%", 0)} · wind ${f(agg.wind, " km/h", 0)} · sky: ${esc(agg.condition)}</div>
       <div style="margin-top:6px"><b>Ideal picture:</b> <code>${esc(ideal)}</code></div>

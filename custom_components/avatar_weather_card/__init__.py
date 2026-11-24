@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import shutil
 from pathlib import Path
 
 from homeassistant.components import frontend, panel_custom
@@ -10,16 +11,15 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from . import websocket_api as ws
-from .const import DOMAIN, IMAGES_URL, PANEL_URL, REFERENCE_URL, STATIC_URL
-from .images import ReferenceLibrary
+from .const import DOMAIN, PANEL_URL, STATIC_URL
 from .sets import SetLibrary
 from .store import ConfigStore
-from .views import BackupDownloadView, OriginalView, ReferenceUploadView, SetExportView, SetImportView, UploadView
+from .views import BackupDownloadView, OriginalView, PictureView, SetExportView, SetImportView, UploadView
 
 _LOGGER = logging.getLogger(__name__)
 # Cache-busting token for the frontend files (panel, card and the modules they import): change it whenever a frontend file changes,
 # and the same token in the import lines of avatar-weather-card.js and avatar-weather-panel.js.
-VERSION = "0.3.2"
+VERSION = "0.3.3"
 
 
 async def _ensure_active(hass: HomeAssistant, store, sets: SetLibrary) -> None:
@@ -44,18 +44,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await hass.async_add_executor_job(sets.setup)
         data["sets"] = sets
         await _ensure_active(hass, data["store"], sets)
-        ref = ReferenceLibrary(root)
-        await hass.async_add_executor_job(ref.setup)
-        data["reference"] = ref
+        # older versions kept an optional reference picture here: it is gone, and so is any copy still on disk
+        await hass.async_add_executor_job(lambda: shutil.rmtree(root / "reference", ignore_errors=True))
         hass.http.register_view(UploadView(hass))
         hass.http.register_view(OriginalView(hass))
-        hass.http.register_view(ReferenceUploadView(hass))
+        hass.http.register_view(PictureView(hass))
         hass.http.register_view(BackupDownloadView(hass))
         hass.http.register_view(SetExportView(hass))
         hass.http.register_view(SetImportView(hass))
-        await hass.http.async_register_static_paths(
-            [StaticPathConfig(IMAGES_URL, str(sets.dir), False), StaticPathConfig(REFERENCE_URL, str(ref.dir), False)]
-        )
     if not data.get("static"):
         await hass.http.async_register_static_paths(
             [StaticPathConfig(STATIC_URL, str(Path(__file__).parent / "frontend"), False)]

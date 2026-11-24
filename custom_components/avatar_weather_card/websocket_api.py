@@ -24,8 +24,6 @@ def async_register(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_config_set)
     websocket_api.async_register_command(hass, ws_images_list)
     websocket_api.async_register_command(hass, ws_image_delete)
-    websocket_api.async_register_command(hass, ws_reference_get)
-    websocket_api.async_register_command(hass, ws_reference_delete)
     websocket_api.async_register_command(hass, ws_series_catalog)
     websocket_api.async_register_command(hass, ws_series_install)
     websocket_api.async_register_command(hass, ws_series_install_file)
@@ -45,7 +43,7 @@ def async_register(hass: HomeAssistant) -> None:
 
 def _listing(hass: HomeAssistant, sid: str | None = None) -> dict:
     """The picture list of a set (the active one when `sid` is empty or unknown), as the card and the panel see it.
-    Carries `set`, the id the pictures are served under (/avatar_weather_card_images/<set>/<name>.webp). Blocking: run in the executor."""
+    Carries `set`, the id the pictures are served under (/api/avatar_weather_card/image/<set>/<name>.webp, login required). Blocking: run in the executor."""
     d = hass.data[DOMAIN]
     sets: SetLibrary = d["sets"]
     sid = sid if sid and sets.exists(sid) else d["store"].active_set
@@ -94,21 +92,6 @@ async def ws_image_delete(hass, connection, msg):
         connection.send_error(msg["id"], "not_found", str(err))
         return
     ok = await hass.async_add_executor_job(lib.delete, msg["name"])
-    connection.send_result(msg["id"], {"deleted": ok})
-
-
-@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/reference_get"})
-@websocket_api.require_admin
-@websocket_api.async_response
-async def ws_reference_get(hass, connection, msg):
-    connection.send_result(msg["id"], await hass.async_add_executor_job(hass.data[DOMAIN]["reference"].info))
-
-
-@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/reference_delete"})
-@websocket_api.require_admin
-@websocket_api.async_response
-async def ws_reference_delete(hass, connection, msg):
-    ok = await hass.async_add_executor_job(hass.data[DOMAIN]["reference"].delete)
     connection.send_result(msg["id"], {"deleted": ok})
 
 
