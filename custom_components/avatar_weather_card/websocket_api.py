@@ -26,7 +26,6 @@ def async_register(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_image_delete)
     websocket_api.async_register_command(hass, ws_series_catalog)
     websocket_api.async_register_command(hass, ws_series_install)
-    websocket_api.async_register_command(hass, ws_series_install_file)
     websocket_api.async_register_command(hass, ws_backups_list)
     websocket_api.async_register_command(hass, ws_backup_create)
     websocket_api.async_register_command(hass, ws_backup_restore)
@@ -134,13 +133,15 @@ def _clean_item(x) -> dict | None:
     if not isinstance(x, dict) or not isinstance(x.get("id"), str) or not SERIES_ID.match(x["id"]):
         return None
     out = {"id": x["id"]}
-    for k, mx in (("name", 80), ("version", 40), ("description", 500), ("author", 80), ("license", 80), ("attribution", 300), ("preview_url", 300)):
+    for k, mx in (("name", 80), ("version", 40), ("description", 500), ("author", 80), ("license", 80), ("attribution", 300)):
         v = x.get(k, "")
         out[k] = str(v)[:mx] if isinstance(v, (str, int, float)) else ""
     for k in ("count", "bytes"):
         out[k] = x[k] if isinstance(x.get(k), int) and not isinstance(x.get(k), bool) else 0
     zip_url = x.get("zip_url", "")
     out["zip_url"] = zip_url if isinstance(zip_url, str) and zip_url.startswith("https://") and len(zip_url) < 400 else ""
+    preview = x.get("preview_url", "")       # a picture shown in the panel before installing (optional)
+    out["preview_url"] = preview if isinstance(preview, str) and preview.startswith("https://") and len(preview) < 400 else ""
     sha = x.get("sha256", "")
     out["sha256"] = sha.lower() if isinstance(sha, str) and re.fullmatch(r"[0-9a-fA-F]{64}", sha) else ""
     return out
@@ -150,7 +151,7 @@ def _clean_item(x) -> dict | None:
 @websocket_api.require_admin
 @websocket_api.async_response
 async def ws_series_catalog(hass, connection, msg):
-    """The sets on offer (from the catalog on the internet), the sets installed and the zips dropped in the incoming folder."""
+    """The sets on offer (from the catalog on the internet) and the sets installed."""
     d = hass.data[DOMAIN]
     url = d["store"].config["series"]["catalog_url"] or DEFAULT_CATALOG_URL
     items, error = [], ""
@@ -161,8 +162,7 @@ async def ws_series_catalog(hass, connection, msg):
     except (aiohttp.ClientError, ValueError, TimeoutError) as err:
         error = str(err) or err.__class__.__name__
     sets = await hass.async_add_executor_job(d["sets"].listing)
-    incoming = await hass.async_add_executor_job(d["sets"].incoming_files)
-    connection.send_result(msg["id"], {"catalog": items, "error": error, "url": url, "sets": sets, "incoming": incoming})
+    connection.send_result(msg["id"], {"catalog": items, "error": error, "url": url, "sets": sets})
 
 
 def _install_error(connection, msg, err: ValueError) -> None:
@@ -200,32 +200,6 @@ async def ws_series_install(hass, connection, msg):
     except (aiohttp.ClientError, ValueError, TimeoutError) as err:
         if not isinstance(err, SetExists):
             _LOGGER.warning("Installing set %s failed: %s", sid, err)
-        _install_error(connection, msg, err)
-        return
-    connection.send_result(msg["id"], result)
-
-
-@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/series_install_file", vol.Required("file"): str, **_INSTALL})
-@websocket_api.require_admin
-@websocket_api.async_response
-async def ws_series_install_file(hass, connection, msg):
-    """Install a set from a zip dropped by hand in /config/avatar_weather_card/incoming/ (same rules as the catalog)."""
-    d = hass.data[DOMAIN]
-    name = msg["file"]
-    sets: SetLibrary = d["sets"]
-    if not re.fullmatch(r"[A-Za-z0-9._ -]{1,120}\.zip", name) or ".." in name:
-        connection.send_error(msg["id"], "invalid_file", "invalid file name")
-        return
-
-    def work():
-        path = sets.incoming / name
-        if not path.is_file() or path.stat().st_size > MAX_SERIES_BYTES:
-            raise ValueError("file not found or too large")
-        return sets.install(path.read_bytes(), [x["id"] for x in d["store"].config["special_days"]], replace=msg["replace"], backup=msg["backup"])
-
-    try:
-        result = await hass.async_add_executor_job(work)
-    except ValueError as err:
         _install_error(connection, msg, err)
         return
     connection.send_result(msg["id"], result)

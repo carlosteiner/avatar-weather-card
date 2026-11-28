@@ -19,7 +19,7 @@ from .views import BackupDownloadView, OriginalView, PictureView, SetExportView,
 _LOGGER = logging.getLogger(__name__)
 # Cache-busting token for the frontend files (panel, card and the modules they import): change it whenever a frontend file changes,
 # and the same token in the import lines of avatar-weather-card.js and avatar-weather-panel.js.
-VERSION = "0.3.3"
+VERSION = "0.3.4"
 
 
 async def _ensure_active(hass: HomeAssistant, store, sets: SetLibrary) -> None:
@@ -38,12 +38,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if "store" not in data:
         data["store"] = ConfigStore(hass)
         await data["store"].async_load()
-        ws.async_register(hass)
         root = Path(hass.config.path("avatar_weather_card"))
         sets = SetLibrary(root)
         await hass.async_add_executor_job(sets.setup)
         data["sets"] = sets
         await _ensure_active(hass, data["store"], sets)
+        # only now: a dashboard reconnecting while Home Assistant starts must not reach a command before the sets are there
+        ws.async_register(hass)
         # older versions kept an optional reference picture here: it is gone, and so is any copy still on disk
         await hass.async_add_executor_job(lambda: shutil.rmtree(root / "reference", ignore_errors=True))
         hass.http.register_view(UploadView(hass))

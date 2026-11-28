@@ -64,21 +64,19 @@ def slugify(name: str) -> str:
 
 
 class SetLibrary:
-    """All the picture sets, their backups and the zips waiting in the incoming folder. Every method is blocking: call it through
+    """All the picture sets and their backups. Every method is blocking: call it through
     hass.async_add_executor_job."""
 
     def __init__(self, root: Path) -> None:
         self.root = root
         self.dir = root / "sets"
         self.backups_dir = root / "backups"
-        self.incoming = root / "incoming"     # zips dropped here by hand can be installed from the panel
         self.prompts_dir = root / "prompts"   # <set id>.txt: the prompt file of each set (missing = the built-in one)
 
     # ---------------------------------------------------------------- setup
     def setup(self) -> None:
         self.dir.mkdir(parents=True, exist_ok=True)
         self.backups_dir.mkdir(parents=True, exist_ok=True)
-        self.incoming.mkdir(parents=True, exist_ok=True)
         self.prompts_dir.mkdir(parents=True, exist_ok=True)
         legacy = self.root / "characters"        # before sets there was one library: it becomes the set "default"
         if legacy.is_dir() and not (self.dir / "default").exists():
@@ -258,11 +256,6 @@ class SetLibrary:
             return str(json.loads(zipfile.ZipFile(io.BytesIO(data)).read("series.json")).get("id", ""))
         except (KeyError, ValueError, zipfile.BadZipFile) as err:
             raise ValueError("not a valid series zip (series.json missing)") from err
-
-    def incoming_files(self) -> list[dict]:
-        if not self.incoming.is_dir():
-            return []
-        return [{"file": p.name, "bytes": p.stat().st_size} for p in sorted(self.incoming.glob("*.zip"))]
 
     def install(self, data: bytes, event_ids: list[str], *, replace: bool, backup: bool, expect_id: str | None = None) -> dict:
         """Validate a series zip, then install it as the set named by its series.json id.

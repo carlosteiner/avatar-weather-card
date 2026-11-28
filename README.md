@@ -10,7 +10,7 @@ A Home Assistant integration and Lovelace card that shows **an avatar dressed fo
 
 ![The card in four moments: a sunny afternoon, rain, snow and a clear night](docs/img/hero.webp)
 
-> Version 0.3.3, in active development. Bug reports and ideas are welcome in the [issues](https://github.com/carlosteiner/avatar-weather-card/issues).
+> Version 0.3.4, in active development. Bug reports and ideas are welcome in the [issues](https://github.com/carlosteiner/avatar-weather-card/issues).
 
 ## What you get
 - A sidebar **panel** to set everything up: weather sources, thresholds, times of day, holidays, special days, the pictures and the prompts to make them.

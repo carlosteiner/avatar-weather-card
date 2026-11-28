@@ -13,11 +13,11 @@ Limits: 150 MB zip, 400 MB unpacked, 700 files, 3000 px per side, 12 MB per pict
 Build one with `python3 tools/make_series.py --src <folder with .webp + manifest.json> --out dist --id ... --name ... --version ... [--prompts prompts.txt] [--index index.json]` (it also writes the catalog entry with the size and the sha256, and with `--index` adds it to the images repository's `index.json`).
 
 ## The catalog
-`index.json` in the images repository: `{"series": [{"id", "name", "version", "description", "author", "license", "attribution", "count", "bytes", "sha256", "zip_url"}]}`. `zip_url` must be https; the integration checks the sha256 when it is given. The address of the catalog can be changed in the stored settings (`series.catalog_url`).
+`index.json` in the images repository: `{"series": [{"id", "name", "version", "description", "author", "license", "attribution", "count", "bytes", "sha256", "zip_url", "preview_url"}]}`. `zip_url` must be https; the integration checks the sha256 when it is given. `preview_url` is optional: the https address of a wide picture (1200×420) shown in the panel before installing; the images repository makes it automatically (`tools/make_preview.py`). The address of the catalog can be changed in the stored settings (`series.catalog_url`).
 
 ## Installing and sharing
 - From the catalog: *Settings* tab → *Picture sets* → *Get more sets* → Install / Update / Reinstall.
-- From a zip: *Import a zip…* in the same section, or copy it into `/config/avatar_weather_card/incoming/` and install it from the list.
+- From a zip: *Import a zip…* in the same section.
 - A zip is fully validated before anything is touched: a bad series changes nothing and leaves no backup behind.
 - **To share a set:** fill in *Rename / details* (name, author, **licence**, credits, version), press *Export zip*, then send the zip to the images repository (pull request or issue). The maintainers add it to `index.json` (`tools/make_series.py` computes the size and sha256 for the entry). Only share pictures you may share under the licence you wrote.
 

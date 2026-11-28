@@ -1,9 +1,9 @@
 // Avatar Weather Card - admin panel: settings, prompts, images.
-import { SHARED, parsePrompts, serializePrompts, assemble, sceneOf, baseName, DEFAULT_URL, GUIDE_URL } from "./prompts.js?v=0.3.3";
-import { detectColor, isOpaque, cutBackground, hex, rgb } from "./bgcut.js?v=0.3.3";
-import { createSelector, aggregateWeather, solarMoment, sunriseMinutes, sunsetMinutes, MUSIC_TEMPS } from "./selector.js?v=0.3.3";
-import { blobUrl, hydrate, IMAGE_API } from "./authimg.js?v=0.3.3";
-const VER = "0.3.3";
+import { SHARED, parsePrompts, serializePrompts, assemble, sceneOf, baseName, DEFAULT_URL, GUIDE_URL } from "./prompts.js?v=0.3.4";
+import { detectColor, isOpaque, cutBackground, hex, rgb } from "./bgcut.js?v=0.3.4";
+import { createSelector, aggregateWeather, solarMoment, sunriseMinutes, sunsetMinutes, MUSIC_TEMPS } from "./selector.js?v=0.3.4";
+import { blobUrl, hydrate, IMAGE_API } from "./authimg.js?v=0.3.4";
+const VER = "0.3.4";
 // The cells of the Images grid (2026-11-08 reduction): 5 temperatures x 4 skies x 5 moments, snow only when cold, no cloudy at night,
 // the same cells on the weekend; music: 3 temperatures x 5 moments x weekday/weekend; special days: <id>_<moment>.
 // The finer names (freezing, heatwave, fog, wind, storm, hail, sleet, snowstorm, midday, goldenhour, lateevening) are still valid
@@ -359,6 +359,18 @@ class AvatarWeatherPanel extends HTMLElement {
   // Several sets live side by side. The radio button marks the ACTIVE one: the one shown and edited in the Images tab (and used
   // by the cards that do not name a set). Here a set can be created, renamed, duplicated, backed up, exported (zip), deleted,
   // and new ones come from the catalog or from a zip. Installing never touches any other set.
+  _showPreview(from) {
+    const veil = document.createElement("div"), img = document.createElement("img");
+    veil.style.cssText = "position:fixed;inset:0;z-index:1000;display:flex;background:rgba(0,0,0,.85);cursor:zoom-out;overflow:auto";
+    img.src = from.src; img.alt = from.alt; img.referrerPolicy = "no-referrer";
+    // on a narrow upright screen the wide picture is kept readable and scrolls sideways
+    img.style.cssText = "flex:none;width:min(96vw,1200px);min-width:min(900px,250vw);max-height:92vh;object-fit:contain;margin:auto;border-radius:8px";
+    const close = () => { veil.remove(); window.removeEventListener("keydown", onKey); from.focus(); };
+    const onKey = (e) => { if (e.key === "Escape") close(); };
+    veil.onclick = close; window.addEventListener("keydown", onKey);
+    veil.appendChild(img); this.shadowRoot.appendChild(veil);
+  }
+
   async _renderSets(box) {
     const esc2 = (x) => String(x == null ? "" : x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     const mb = (b) => (b ? `${(b / 1048576).toFixed(1)} MB` : "");
@@ -393,12 +405,11 @@ class AvatarWeatherPanel extends HTMLElement {
     const items = (cat.catalog || []).map((c) => {
       const have = byId[c.id], upd = have && c.version && have.version !== c.version;
       return `<div style="${panel}"><b>${esc2(c.name || c.id)}</b> <small>${esc2(c.version)}</small>${have ? ` <span class="chip c-done">${upd ? "update available" : "installed"}</span>` : ""}
+        ${c.preview_url ? `<img data-s-prev src="${esc2(c.preview_url)}" alt="Preview of the set ${esc2(c.name || c.id)}" title="Click to enlarge" tabindex="0" role="button" referrerpolicy="no-referrer" style="display:block;width:100%;max-width:720px;aspect-ratio:20/7;object-fit:contain;margin:8px 0;border-radius:8px;cursor:zoom-in">` : ""}
         <div class="h">${esc2(c.description)}</div><small>${c.count || "?"} pictures${c.bytes ? " · " + mb(c.bytes) : ""}${c.license ? " · " + esc2(c.license) : ""}${c.author ? " · " + esc2(c.author) : ""}</small>
         ${c.attribution ? `<div><small>${esc2(c.attribution)}</small></div>` : ""}
         <p style="margin:8px 0 0"><button data-s-si="${esc2(c.id)}" data-name="${esc2(c.name || c.id)}" ${c.zip_url ? "" : "disabled"}>${have ? (upd ? "Update" : "Reinstall") : "Install as a new set"}</button></p></div>`;
     });
-    const files = (cat.incoming || []).map((f) => `<div style="${panel}"><code>${esc2(f.file)}</code> <small>${mb(f.bytes)}</small>
-        <p style="margin:8px 0 0"><button class="s" data-s-sf="${esc2(f.file)}">Install this zip</button></p></div>`);
     const baks = (Array.isArray(bk) ? bk : bk.backups || []).map((b) => `<div style="${panel}">
         <b>${esc2(b.name || b.reason || "Backup")}</b> ${b.damaged ? `<span class="err">damaged</span>` : `<small>${esc2(new Date(b.created * 1000).toLocaleString())} · set “${esc2(b.set_name || b.set)}” · ${b.count} pictures · ${mb(b.bytes)}</small>`}
         ${b.description ? `<div class="h">${esc2(b.description)}</div>` : ""}${b.name && b.reason && b.reason !== "manual backup" ? `<div><small>${esc2(b.reason)}</small></div>` : ""}
@@ -413,9 +424,8 @@ class AvatarWeatherPanel extends HTMLElement {
 
       <h3 style="margin:16px 0 2px">Get more sets</h3>
       <p class="h">Sets from the catalog are installed <b>as new sets</b>: your other sets are never touched. If you already have that set, you can update it (its pictures are replaced, with an optional backup).</p>
-      ${cat.error ? `<p class="err">Could not load the catalog (${esc2(cat.error)}). You can still import a zip with the button above, or copy it into <code>/config/avatar_weather_card/incoming/</code> and reopen this tab.</p>` : ""}
+      ${cat.error ? `<p class="err">Could not load the catalog (${esc2(cat.error)}). You can still import a zip with the button above.</p>` : ""}
       ${items.join("")}${!items.length && !cat.error ? `<p class="h">The catalog has no sets yet.</p>` : ""}
-      ${files.length ? `<h3 style="margin:14px 0 2px">Zip files in the incoming folder</h3>${files.join("")}` : ""}
 
       <h3 style="margin:16px 0 2px">Backups</h3>
       <p class="h">A backup is a copy of one set's pictures, kept on Home Assistant (up to 20). <b>Restore</b> brings back the pictures and the prompts of the set it was taken from (or recreates the set if you deleted it); if that set still exists you are asked first, because it is overwritten. <b>Restore as a new set</b> adds the backup as a separate set (unless a set with the same name exists: then you are asked to overwrite it). Backups made before sets existed can only be restored as a new set.</p>
@@ -435,6 +445,12 @@ class AvatarWeatherPanel extends HTMLElement {
       catch (e) { msg(e.message || "Failed", true); lock(false); }
     };
 
+    // previews of the catalog sets: click to see it large; one that cannot be loaded is simply not shown
+    box.querySelectorAll("[data-s-prev]").forEach((img) => {
+      img.onerror = () => img.remove();
+      img.onclick = () => this._showPreview(img);
+      img.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this._showPreview(img); } };
+    });
     // active set
     box.querySelectorAll("[data-s-act]").forEach((r) => (r.onchange = () => run("Switching…", async () => {
       await this._hass.callWS({ type: "avatar_weather_card/set_activate", set_id: r.dataset.sAct });
@@ -485,7 +501,7 @@ class AvatarWeatherPanel extends HTMLElement {
     box.querySelectorAll("[data-s-brn]").forEach((b) => (b.onclick = () => restoreAsk(b, true)));
     box.querySelectorAll("[data-s-br]").forEach((b) => (b.onclick = () => restoreAsk(b, false)));
 
-    // installing (catalog, incoming folder, uploaded zip): a new set; when the id is taken, ask before replacing that set
+    // installing (catalog, uploaded zip): a new set; when the id is taken, ask before replacing that set
     // pictures that were not installed because their name matches no cell: usually an event this installation does not have (Settings → special days)
     const unknownNote = (r) => !r.unknown_count ? "" : ` ⚠ ${r.unknown_count} picture${r.unknown_count > 1 ? "s were" : " was"} NOT installed: their names match no weather cell, music cell or special day of this installation (${r.unknown.slice(0, 8).join(", ")}${r.unknown_count > 8 ? ", …" : ""}). If they belong to a special day, add a special day with that id (for example xmas or newyear) in the Settings tab and install the set again.`;
     const install = (call, label, existing) => {
@@ -508,7 +524,6 @@ class AvatarWeatherPanel extends HTMLElement {
       if (existing) askReplace(existing); else attempt(false, false);
     };
     box.querySelectorAll("[data-s-si]").forEach((b) => (b.onclick = () => install((replace, backup) => this._hass.callWS({ type: "avatar_weather_card/series_install", series_id: b.dataset.sSi, replace, backup }), `“${b.dataset.name}”`, byId[b.dataset.sSi] ? b.dataset.sSi : null)));
-    box.querySelectorAll("[data-s-sf]").forEach((b) => (b.onclick = () => install((replace, backup) => this._hass.callWS({ type: "avatar_weather_card/series_install_file", file: b.dataset.sSf, replace, backup }), `the zip ${b.dataset.sSf}`, null)));
     box.querySelector("#s-imp").onclick = () => box.querySelector("#s-file").click();
     box.querySelector("#s-file").onchange = (ev) => {
       const f = ev.target.files[0]; ev.target.value = "";
@@ -545,17 +560,16 @@ class AvatarWeatherPanel extends HTMLElement {
     const slots = lib.slots || {}, all = Object.keys(slots).sort();
     const events = this._cfg.special_days.map((d) => d.id).filter(Boolean);
     const sel = createSelector({ events: Object.fromEntries(events.map((e) => [e, ["01-01", "01-01"]])) });
-    const MOMLAB = { earlymorning: "Early morning", morning: "Morning (to 15:00)", afternoon: "Afternoon & golden hour", evening: "Evening & late evening", night: "Night", midday: "Midday", goldenhour: "Golden hour", lateevening: "Late evening", day: "All day (generic, optional)" };
+    const MOMLAB = { earlymorning: "Early morning", morning: "Morning (to 15:00)", afternoon: "Afternoon & golden hour", evening: "Evening & late evening", night: "Night", midday: "Midday", goldenhour: "Golden hour", lateevening: "Late evening" };
     const FOLD = { midday: "morning", goldenhour: "afternoon", lateevening: "evening" };   // old moment -> the section it now lives in
     const cellOn = (t, k, m) => plaus(t, k, m);   // weekend cells = the same cells as the weekdays
     const NA = `<td class="q-na"></td>`;
     const SECTIONS = [
-      ...[...MOM, "day"].map((m) => ({ key: m, title: MOMLAB[m], kind: "band", m })),
+      ...MOM.map((m) => ({ key: m, title: MOMLAB[m], kind: "band", m })),
       ...(events.length ? [{ key: "events", title: "Special days", kind: "events" }] : []),
       { key: "music", title: "Music", kind: "music" },
     ];
     const INTRO = {
-      day: "The generic family: used for morning, midday and afternoon until a band has pictures of its own. Name: <code>&lt;temp&gt;_&lt;sky&gt;_day</code>.",
       events: "One picture per special day and time of day: <code>&lt;day&gt;_&lt;moment&gt;</code>. The weather is ignored on these days. The built-in prompts have scenes for halloween, xmas and newyear: for other days write the scene yourself (or let an AI write it, Prompts tab).",
       music: "Seated pictures for when music plays: <code>music_&lt;temp&gt;_&lt;moment&gt;</code>, with only three temperatures: cold (also chilly), mild, hot (also warm). Alternatives <code>_2</code>, <code>_3</code> are rotated. Their prompt uses the music pose (Prompts tab).",
     };
@@ -600,7 +614,6 @@ class AvatarWeatherPanel extends HTMLElement {
     const doneOf = (s) => {   // cells (weekday + weekend) that have a picture of their own
       if (s.kind === "events") return [events.length * MOM.length, events.reduce((a, e) => a + MOM.filter((m) => baseSet.has(`${e}_${m}`)).length, 0)];
       if (s.kind === "music") { let n = 0, d = 0; for (const t of MUSIC_TEMPS) for (const m of MOM) for (const wk of [false, true]) { n++; if (baseSet.has(`music_${t}_${m}${wk ? "_weekend" : ""}`)) d++; } return [n, d]; }
-      if (s.key === "day") return [0, 0];   // the generic family is optional: not counted
       let n = 0, d = 0;
       for (const t of TEMPS) for (const k of SKIES) for (const wk of [false, true]) { if (!cellOn(t, k, s.m)) continue; n++; if (baseSet.has(nameOf(t, k, s.m, wk))) d++; }
       return [n, d];
@@ -1100,12 +1113,33 @@ class AvatarWeatherPanel extends HTMLElement {
     const same = !!rp && (rp.event ? rp.event === wi.event && rp.moment === want.moment
       : rp.temp === want.temp && rp.sky === want.sky && rp.moment === want.moment && rp.weekend === want.weekend);
     const noEvPics = wi.event && !want.event;
-    const img = res ? `<img data-asrc="${IMAGE_API}/${this._lib && this._lib.set ? encodeURIComponent(this._lib.set) + "/" : ""}${esc(res.name)}.webp?v=${(slots[res.name] || {}).v || 0}" style="height:170px;float:right;margin-left:12px;border-radius:8px;background:repeating-conic-gradient(#8883 0 25%, transparent 0 50%) 50%/14px 14px">` : "";
-    box.innerHTML = `${img}
+    const src = res ? `${IMAGE_API}/${this._lib && this._lib.set ? encodeURIComponent(this._lib.set) + "/" : ""}${encodeURIComponent(res.name)}.webp?v=${(slots[res.name] || {}).v || 0}` : "";
+    this._showResult(box, src, `
       <div><b>Weather now</b> — temperature ${f(agg.temp, "°C")} · humidity ${f(agg.humidity, "%", 0)} · wind ${f(agg.wind, " km/h", 0)} · sky: ${esc(agg.condition)}</div>
       <div style="margin-top:6px"><b>Ideal picture:</b> <code>${esc(ideal)}</code></div>
       <div style="margin-top:4px"><b>Selected picture:</b> ${res ? `<code>${esc(res.name)}</code> ${same ? "<small>(exact match)</small>" : `<small>(closest available, distance ${res.score.toFixed(1)})</small>`}${noEvPics ? `<div><small class="err">Today is the special day “${esc(wi.event)}” but it has no pictures yet: upload ${esc(wi.event)}_${esc(wi.moment)} (Images tab). Meanwhile the normal pictures are used.</small></div>` : ""}` : "<small>none: no pictures uploaded yet (Images tab)</small>"}</div>
-      <div style="clear:both"></div>`;
+      <div style="clear:both"></div>`);
+  }
+
+  // Home Assistant calls this on every state change of any entity. The picture stays in the page and only what changed is written:
+  // a new <img> each time would be empty until its picture is loaded again, which shows as flickering. When the picture does
+  // change, only its address is replaced, so the old one stays on screen until the new one is ready.
+  _showResult(box, src, html) {
+    let body = box.querySelector("[data-result-text]");
+    if (!body) {
+      box.innerHTML = "<div data-result-text></div>";
+      body = box.firstElementChild;
+    }
+    let img = box.querySelector("img[data-result-img]");
+    if (!src) { if (img) img.remove(); }
+    else if (!img) {
+      img = document.createElement("img");
+      img.dataset.resultImg = ""; img.alt = "";
+      img.style.cssText = "height:170px;float:right;margin-left:12px;border-radius:8px;background:repeating-conic-gradient(#8883 0 25%, transparent 0 50%) 50%/14px 14px";
+      img.dataset.asrc = src;
+      box.insertBefore(img, body);
+    } else if (img.dataset.asrc !== src) img.dataset.asrc = src;
+    if (body._html !== html) { body.innerHTML = html; body._html = html; }
   }
 
   _collect() {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.4 (2026-11-28)
+- *Get more sets* shows a preview of every set that has one in the catalog (click to enlarge).
+- Images tab: the *All day (generic)* section is gone. Pictures already named `<temp>_<sky>_day` are still used by the card, but are no longer listed in this tab.
+- Settings tab: the picture of the current result no longer flickers (it was rebuilt at every state change in Home Assistant).
+- A dashboard that reconnected while Home Assistant was starting could get an error (`KeyError: 'sets'` in the log): the commands are now registered only when the picture sets are loaded.
+- Removed the `/config/avatar_weather_card/incoming/` folder and its list in the panel: *Import a zip…* does the same. The integration no longer creates or reads that folder; files already in it are left alone and can be deleted.
+
 ## 0.3.3
 - **Security:** the pictures are no longer served as unauthenticated static paths. They come from an authenticated view (`/api/avatar_weather_card/image/<set>/<name>.webp`, any logged-in user); the card and the panel fetch them with the user's login and show them as blob URLs, so nobody who can merely reach Home Assistant (Nabu Casa, port forward) can read them.
 - The optional *reference picture* (Prompts tab, Images tab "Copy reference image") is removed: it was not used by the card and is often a photo of a real person. A copy left on disk by an older version is deleted at the next start.
