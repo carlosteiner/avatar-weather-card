@@ -30,15 +30,17 @@ While a media player plays, the card turns into a music view: cover, track, prog
 
 ## Requirements
 - Home Assistant 2024.7 or newer (tested on 2026.10) and a modern browser (the card uses CSS container query units).
-- Pictures of the character. A default series will be available from the images repository (see *Pictures*); you can also make your own.
+- Pictures of the character: install a ready-made set from the catalog (see *Picture sets*) or make your own.
 
 ## Installation
-### HACS (custom repository)
-One click: use the *Open in HACS* button at the top, or add it by hand:
+### HACS (recommended)
+Avatar Weather Card is in the HACS default list. Use the *Open in HACS* button at the top, or:
 
-1. HACS → ⋮ → *Custom repositories* → add this repository, category *Integration*.
-2. Install **Avatar Weather Card** and restart Home Assistant.
+1. HACS → search for **Avatar Weather Card** → **Download**.
+2. Restart Home Assistant.
 3. Settings → Devices & services → *Add integration* → **Avatar Weather Card**.
+
+If the search does not find it (the HACS list may not be updated yet), add it by hand as a fallback: HACS → ⋮ → *Custom repositories* → add `https://github.com/carlosteiner/avatar-weather-card`, category *Integration*, then follow the steps above.
 
 ### Manual
 Copy `custom_components/avatar_weather_card` into your `config/custom_components/`, restart, then add the integration as above.
